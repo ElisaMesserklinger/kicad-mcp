@@ -26,6 +26,8 @@ from kicad_mcp.tools.bom_tools import register_bom_tools
 from kicad_mcp.tools.netlist_tools import register_netlist_tools
 from kicad_mcp.tools.pattern_tools import register_pattern_tools
 
+
+
 # Import prompt handlers
 from kicad_mcp.prompts.templates import register_prompts
 from kicad_mcp.prompts.drc_prompt import register_drc_prompts
@@ -150,6 +152,8 @@ def create_server() -> FastMCP:
     register_bom_tools(mcp)
     register_netlist_tools(mcp)
     register_pattern_tools(mcp)
+    #Todo add new tools
+
     
     # Register prompts
     logging.info(f"Registering prompts...")

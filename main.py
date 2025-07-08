@@ -12,6 +12,9 @@ from kicad_mcp.config import KICAD_USER_DIR, ADDITIONAL_SEARCH_PATHS
 from kicad_mcp.server import create_server
 from kicad_mcp.utils.env import load_dotenv
 
+server = create_server()
+
+
 # --- Setup Logging --- 
 log_file = os.path.join(os.path.dirname(__file__), 'kicad-mcp.log') 
 logging.basicConfig(
@@ -71,7 +74,7 @@ if __name__ == "__main__":
             logging.info(f"No additional search paths configured") # Changed print to logging
 
         # Create and run server
-        server = create_server()
+        #server = create_server()
         logging.info(f"Running server with stdio transport") # Changed print to logging
         server.run(transport='stdio')
     except Exception as e:

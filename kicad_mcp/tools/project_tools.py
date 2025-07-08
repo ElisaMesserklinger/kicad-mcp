@@ -13,7 +13,7 @@ from kicad_mcp.utils.file_utils import get_project_files, load_project_json
 # _PID = os.getpid()
 
 def register_project_tools(mcp: FastMCP) -> None:
-    """Register project management tools with the MCP server.
+    """Register project management tools with the MCcP server.
     
     Args:
         mcp: The FastMCP server instance

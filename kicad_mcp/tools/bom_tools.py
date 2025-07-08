@@ -656,7 +656,8 @@ async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name
         from kicad_mcp.config import KICAD_APP_PATH
         
         # Path to KiCad command-line tools on Windows
-        kicad_cli = os.path.join(KICAD_APP_PATH, "bin", "kicad-cli.exe")
+        test_kicad_cli = os.path.join(KICAD_APP_PATH, "bin", "kicad-cli.exe")
+        kicad_cli = os.path.normpath(test_kicad_cli)
         
         if not os.path.exists(kicad_cli):
             return {
