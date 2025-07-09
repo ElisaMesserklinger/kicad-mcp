@@ -25,6 +25,8 @@ from kicad_mcp.tools.drc_tools import register_drc_tools
 from kicad_mcp.tools.bom_tools import register_bom_tools
 from kicad_mcp.tools.netlist_tools import register_netlist_tools
 from kicad_mcp.tools.pattern_tools import register_pattern_tools
+#added own tool
+from  kicad_mcp.tools.component_tool import register_component_tools
 
 
 
@@ -152,7 +154,8 @@ def create_server() -> FastMCP:
     register_bom_tools(mcp)
     register_netlist_tools(mcp)
     register_pattern_tools(mcp)
-    #Todo add new tools
+    #added own tools
+    register_component_tools(mcp)
 
     
     # Register prompts
