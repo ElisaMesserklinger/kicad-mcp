@@ -7,7 +7,7 @@ import logging
 from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(filename="C:\Git\kicad-mcp\mcp_sunprocess.log", level=logging.DEBUG)
 
 try:
     import pcbnew
@@ -33,6 +33,8 @@ class BoardManager:
         Returns:
             Dict with load result and board info
         """
+
+        logging.debug(project_path)
         
         # Convert .kicad_pro to .kicad_pcb
         if project_path.endswith('.kicad_pro'):
@@ -40,6 +42,8 @@ class BoardManager:
         else:
             pcb_path = project_path
         
+
+        logging.debug(pcb_path)
         if not os.path.exists(pcb_path):
             return {
                 "success": False,
@@ -47,11 +51,17 @@ class BoardManager:
             }
         
         try:
-            self.board = pcbnew.LoadBoard(pcb_path)
+            
+
+            try:
+                self.board = pcbnew.LoadBoard(pcb_path)
+            except Exception as e:
+                return {"success": False, "error": f"Failed to load board: {str(e)}"}
+
             self.project_path = project_path
             
             # Get board info
-            footprints = list(self.board.GetFootprints())
+            #footprints = list(self.board.GetFootprints())
             
             
             return {
@@ -59,9 +69,6 @@ class BoardManager:
                 "message": f"Board loaded successfully: {pcb_path}",
                 "board_info": {
                     "pcb_path": pcb_path,
-                    "footprint_count": len(footprints),
-                    "layer_count": self.board.GetCopperLayerCount(),
-                    "board_name": self.board.GetFileName()
                 }
             }
             

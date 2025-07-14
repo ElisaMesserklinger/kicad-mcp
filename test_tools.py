@@ -52,10 +52,26 @@ def test_place_component_workflow():
         value="1k",
         library="Resistor_SMD" 
     )
+
+    place_capacitor = kicad.place_component(
+    project_path=project_path,
+    component_id="C_0805_2012Metric",
+    position={"x": 30.0, "y": 15.0},
+    reference="C1",
+    value="100nF",
+    library="Capacitor_SMD"
+)
     
     print(f"Place result: {place_result}")
+    print(f"Place result: {place_capacitor}")
+
+
     
     if not place_result.get("success"):
+        print("❌ Component placement failed")
+        return False
+    
+    if not place_capacitor.get("success"):
         print("❌ Component placement failed")
         return False
     
@@ -81,7 +97,7 @@ def test_simplified_place_component():
     
     kicad = KiCadBridge()
     
-    project_path = "C:/Users/messeel/KiCadProjects/KiCad\\test1\\test1.kicad_pro"
+    project_path = "C:/Users/messeel/KiCadProjects/KiCad/test/test.kicad_pro"
     
     print("Testing simplified place_component (load -> place -> save)...")
     
@@ -89,7 +105,7 @@ def test_simplified_place_component():
     result = kicad.place_component(
         project_path=project_path,
         component_id="R_0805_2012Metric",
-        position={"x": 25.0, "y": 15.0},
+        position={"x": 100.0, "y": 200.0},
         reference="R_SIMPLE",
         value="1k",
         rotation=0,
@@ -97,8 +113,11 @@ def test_simplified_place_component():
         library="Resistor_SMD" 
 
     )
+
+    
     
     print(f"Result: {result}")
+
     
     if result.get("success"):
         print("✅ Simplified approach works!")
@@ -112,9 +131,32 @@ def test_simplified_place_component():
     return result
 
 
+
+def test_load_board():
+    kicad = KiCadBridge()
+    
+    project_path = "C:/Users/messeel/KiCadProjects/KiCad/test/test.kicad_pro"
+
+    load_result = kicad.load_board(project_path)
+    print(f"Load result: {load_result}")
+    
+    if not load_result.get("success"):
+        print("❌ Board loading failed, cannot continue")
+        return False
+    
+
+
+
 #test_place_component_workflow()
 test_simplified_place_component()
 
 
 #"path": "C:/Users/messeel/KiCadProjects/KiCad\\test1\\test1.kicad_pro",
-  
+#C:/Users/messeel/KiCadProjects/KiCad\\test\\test.kicad_pro
+
+#test_load_board()
+
+#"C:/Program Files/KiCad/9.0/bin/python.exe" kicad_script_subprocess.py load_board "{\"project_path\": "C:/Users/messeel/KiCadProjects/KiCad/test/test.kicad_pro\"}"
+
+#"C:/Users/messeel/AppData/Local/Programs/KiCad/9.0/bin/python.exe" "C:\Git\kicad-mcp\kicad_mcp\utils\kicad_script_subprocess.py load_board" "{"project_path": "C:/Users/messeel/KiCadProjects/KiCad/test/test.kicad_pro"}
+

@@ -120,7 +120,7 @@ def find_kicad_cli() -> Optional[str]:
     """
     # Check if kicad-cli is in PATH
     try:
-        if system == "Windows":
+        if system == "Windows": 
             # On Windows, check for kicad-cli.exe
             result = subprocess.run(["where", "kicad-cli.exe"], capture_output=True, text=True)
             if result.returncode == 0:

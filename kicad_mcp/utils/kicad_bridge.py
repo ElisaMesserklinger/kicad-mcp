@@ -3,7 +3,12 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+import threading
+import logging
 
+
+logging.basicConfig(filename="C:\Git\kicad-mcp\mcp_sunprocess.log", level=logging.DEBUG)
+logging.debug("TEST LOGGER")
 
 class KiCadBridge:
     """Bridge between MCP server and KiCad Python environment."""
@@ -36,13 +41,19 @@ class KiCadBridge:
 
 import sys
 import json
-import os
 from pathlib import Path
+import logging
+import threading
+import os
+
+sys.stdout.flush()
 
 # Project Path Setup
 project_root = Path("{project_root}")
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root.parent))  # Add parent directory too
+
+logging.basicConfig(filename="C:\Git\kicad-mcp\mcp_sunprocess.log", level=logging.DEBUG)
 
 
 try:
@@ -79,14 +90,19 @@ if __name__ == "__main__":
         if method_name == "load_board":
             result = board_manager.load_board(params["project_path"])
             if result["success"]:
+                logging.debug("Successfully loaded board in subprocess")
                 component_manager.set_board(board_manager.get_board())
+                logging.debug("TEST")
+                logging.debug(json.dumps(result))
+
             print(json.dumps(result))
+           
         
         elif method_name == "place_component_full":
             project_path = params["project_path"]
             
             # Step 1: Load board
-            print("DEBUG: Loading board...", file=sys.stderr)
+            logging.debug("DEBUG: Loading board...")
             load_result = board_manager.load_board(project_path)
             if not load_result["success"]:
                 print(json.dumps(load_result))
@@ -94,30 +110,30 @@ if __name__ == "__main__":
             
             # Set board in component manager
             component_manager.set_board(board_manager.get_board())
-            print("DEBUG: Board loaded successfully", file=sys.stderr)
+            logging.debug("DEBUG: Board loaded successfully")
             
             # Step 2: Place component
-            print("DEBUG: Placing component...", file=sys.stderr)
+            logging.debug("DEBUG: Placing component...")
             footprint = component_manager.create_footprint(
                 component_id=params["component_id"],
                 position=params["position"],
+                library=params["library"],
                 reference=params.get("reference"),
                 value=params.get("value"),
                 rotation=params.get("rotation", 0),
                 layer=params.get("layer", "F.Cu"),
-                library=params.get("library")
             )
             component_info = component_manager.place_footprint(footprint)
-            print("DEBUG: Component placed successfully", file=sys.stderr)
+            logging.debug("DEBUG: Component placed successfully")
             
             # Step 3: Save board
-            print("DEBUG: Saving board...", file=sys.stderr)
+            logging.debug("DEBUG: Saving board...")
             save_result = board_manager.save_board(params.get("output_path"))
             if not save_result["success"]:
                 print(json.dumps(save_result))
                 sys.exit(1)
             
-            print("DEBUG: Board saved successfully", file=sys.stderr)
+            logging.debug("DEBUG: Board saved successfully")
             
             # Return combined result
             result = {{
@@ -134,6 +150,7 @@ if __name__ == "__main__":
                 "board_info": load_result.get("board_info", {{}}),
                 "save_info": save_result
             }}
+            logging.debug(json.dumps(result))
             print(json.dumps(result))
         
         elif method_name == "save_board":
@@ -162,46 +179,76 @@ if __name__ == "__main__":
 
     def _run_subprocess(self, method_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """Run subprocess with method and parameters."""
-        try:
+        logging.debug("Before Calling Subprocess")
+        logging.debug(f"Method: {method_name}")
+        logging.debug(f"Params: {params}")
+        
+        try:             
             result = subprocess.run([
                 self.kicad_python, 
                 self.script_path, 
                 method_name, 
-                json.dumps(params)
-            ], capture_output=True, text=True, timeout=30)
+                json.dumps(params)],
+
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL, 
+                timeout=60
+            )
+
+            logging.debug(f"Subprocess return code: {result.returncode}")
+            logging.debug(f"Subprocess stdout: {result.stdout}")
+            logging.debug(f"Subprocess stderr: {result.stderr}")
             
             if result.returncode != 0:
-                return {"success": False, "error": f"Subprocess failed: {result.stderr}"}
+                return {
+                    "success": False,
+                    "error": f"Subprocess failed with return code {result.returncode}",
+                    "stdout": result.stdout,
+                    "stderr": result.stderr
+                }
             
-            return json.loads(result.stdout)
+            # Parse the JSON output
+            try:
+                logging.debug("Try to parse JSON loads")
+                return json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                return {
+                    "success": False,
+                    "error": f"Failed to parse subprocess output: {str(e)}",
+                    "stdout": result.stdout,
+                    "stderr": result.stderr
+                }
             
         except subprocess.TimeoutExpired:
-            return {"success": False, "error": "Command timeout"}
+            logging.error("Subprocess timeout")
+            return {"success": False, "error": "Command timeout after 60 seconds"}
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            logging.error(f"Subprocess error: {str(e)}")
+            return {"success": False, "error": f"Subprocess execution failed: {str(e)}"}
         
     
 
-
     #functions that are called by tools
     def load_board(self, project_path: str) -> Dict[str, Any]:
+        logging.debug("Called Load Board with Tool")
+        logging.debug("Project Path")
         return self._run_subprocess("load_board", {"project_path": project_path})
     
-    def place_component(self, project_path: str, component_id: str, position: Dict[str, Any], 
+    def place_component(self, project_path: str, component_id: str, position: Dict[str, Any],  library: str, 
                        reference: Optional[str] = None, value: Optional[str] = None,
                        rotation: float = 0, layer: str = "F.Cu", 
-                       library: Optional[str] = None,
                        output_path: Optional[str] = None) -> Dict[str, Any]:
         """Place a single component (load -> place -> save)."""
         return self._run_subprocess("place_component_full", {
             "project_path": project_path,
             "component_id": component_id,
             "position": position,
+            "library": library,
             "reference": reference,
             "value": value,
             "rotation": rotation,
             "layer": layer,
-            "library": library,
             "output_path": output_path
         })
     
@@ -209,3 +256,7 @@ if __name__ == "__main__":
         return self._run_subprocess("save_board", {"output_path": output_path})
 
 
+
+
+
+#"C:/Program Files/KiCad/9.0/bin/python.exe" kicad_script_subprocess.py load_board "{\"project_path\": \"C:/Users/messeel/KiCadProjects/KiCad\\test\\test.kicad_pro"}"

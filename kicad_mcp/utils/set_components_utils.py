@@ -38,6 +38,9 @@ class ComponentManager:
         """Set the current board."""
         self.board = board
 
+    def get_board(self):
+        return self.board
+
     def convert_position_to_nanometers(self, position: Dict[str, Any]) -> Tuple[int, int]:
         """Convert position from mm/inch to nanometers.
         
@@ -72,9 +75,9 @@ class ComponentManager:
             "unit": unit
         }
     
-    def create_footprint(self, component_id: str, position: Dict[str, Any], 
+    def create_footprint(self, component_id: str, position: Dict[str, Any], library: str,
                         reference: Optional[str] = None, value: Optional[str] = None,
-                        rotation: float = 0, library: Optional[str] = None, layer: str = "F.Cu") -> 'pcbnew.FOOTPRINT':
+                        rotation: float = 0,  layer: str = "F.Cu") -> 'pcbnew.FOOTPRINT':
         """Create a new footprint with the specified parameters.
         
         Args:
@@ -102,10 +105,10 @@ class ComponentManager:
             # Use provided library
             library_name = library
             footprint_name = component_id
-        else:
-           raise ValueError("No Library")
+        
         
         # Set footprint ID
+        
         footprint.SetFPID(pcbnew.LIB_ID(component_id, library_name))
 
         # Set position

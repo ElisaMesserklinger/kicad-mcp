@@ -4,6 +4,7 @@ import logging
 import asyncio
 from typing import Dict, Any, Optional, List
 from mcp.server.fastmcp import FastMCP, Context
+import subprocess
 
 # Configure logging properly for MCP
 logging.basicConfig(
@@ -31,7 +32,7 @@ def register_component_tools(mcp: FastMCP) -> None:
     """Register component placement tools using direct pcbnew API."""
     
     @mcp.tool()
-    async def load_pcb_board(project_path: str, ctx: Context) -> Dict[str, Any]:
+    def load_pcb_board(project_path: str, ctx: Context) -> Dict[str, Any]:
         """Load a KiCad PCB board for component operations.
         
         Args:
@@ -40,78 +41,79 @@ def register_component_tools(mcp: FastMCP) -> None:
         Returns:
             Dict with success status and board information
         """
-        
+    
+    
         # Check if KiCadBridge is available
         if kicad_subprocess is None:
             error_msg = "KiCadBridge not initialized"
-            ctx.error(error_msg)
+            #ctx.error(error_msg)
             return {"success": False, "error": error_msg}
         
-        ctx.info(f"Loading PCB board from {project_path}")
-        await ctx.report_progress(10, 100)
+        #ctx.info(f"Loading PCB board from {project_path}")
+        #await ctx.report_progress(10, 100)
         
         # Log the exact path being used
-        ctx.info(f"Absolute path: {os.path.abspath(project_path)}")
-        ctx.info(f"Path exists: {os.path.exists(project_path)}")
-        
+        #ctx.info(f"Absolute path: {os.path.abspath(project_path)}")
+        #ctx.info(f"Path exists: {os.path.exists(project_path)}")
+        logger.debug(f"Absolute path: {os.path.abspath(project_path)}")
+        logger.debug(f"Path exists: {os.path.exists(project_path)}")
+
+
         # Check if corresponding PCB file exists
         if project_path.endswith('.kicad_pro'):
             pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-            ctx.info(f"PCB file path: {pcb_path}")
-            ctx.info(f"PCB file exists: {os.path.exists(pcb_path)}")
-        
+            #ctx.info(f"PCB file path: {pcb_path}")
+            #ctx.info(f"PCB file exists: {os.path.exists(pcb_path)}")
+      
         try:
             # Add timeout handling and better error reporting
             ctx.info("Starting board load operation...")
             logger.info("Starting board load operation...")
-            start_time = asyncio.get_event_loop().time()
             
-            # Run the subprocess operation
-            result = kicad_subprocess.load_board(project_path)
+            result = kicad_subprocess.load_board(pcb_path)
+            logger.debug("WE MADE IT")
+
+            #await ctx.report_progress(100, 100)
             
-            end_time = asyncio.get_event_loop().time()
-            ctx.info(f"Board load operation completed in {end_time - start_time:.2f} seconds")
-            
-            await ctx.report_progress(100, 100)
-            
+            '''
             if result.get("success"):
                 ctx.info("Board loaded successfully")
                 logger.info("Board loaded successfully")
-
                 ctx.info(f"Board info: {result.get('board_info', {})}")
             else:
                 error_msg = result.get("error", "Failed to load board")
                 ctx.error(f"Board load failed: {error_msg}")
-                logger.info("Board failed to load")
-
-                
-                # Log additional debug info
-                if "stderr" in result:
-                    ctx.error(f"Subprocess stderr: {result['stderr']}")
+                logger.error("Board failed to load")
             
-            return result
+            '''
+            return result or {
+            "success": False,
+            "error": "Load Board Failed with an unkown error"
+        }
             
         except asyncio.TimeoutError:
             error_msg = "Board load operation timed out"
             ctx.error(error_msg)
-            logger.info(error_msg)
+            logger.error(error_msg)
             return {"success": False, "error": error_msg}
             
         except Exception as e:
             error_msg = f"Unexpected error during board load: {str(e)}"
             ctx.error(error_msg)
+            logger.error(error_msg)
             return {"success": False, "error": error_msg}
+    
     
     @mcp.tool()
     async def place_component(
         project_path: str,
         component_id: str,
         position: Dict[str, Any],
+        library: str,
         reference: Optional[str] = None,
         value: Optional[str] = None,
         rotation: float = 0,
         layer: str = "F.Cu",
-        library: Optional[str] = None,
         output_path: Optional[str] = None,
         ctx: Context = None
     ) -> Dict[str, Any]:
@@ -131,23 +133,31 @@ def register_component_tools(mcp: FastMCP) -> None:
         Returns:
             Dict with success status and component info
         """
+
+       
         if ctx:
             ctx.info(f"Placing component {component_id} at {position}")
             await ctx.report_progress(10, 100)
+
+        if project_path.endswith('.kicad_pro'):
+            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
         
         try:
+            
+        
             result = kicad_subprocess.place_component(
-                project_path=project_path,
+                project_path=pcb_path,
                 component_id=component_id,
                 position=position,
+                library=library,
                 reference=reference,
                 value=value,
                 rotation=rotation,
                 layer=layer,
-                library=library,
                 output_path=output_path
             )
             
+                    
             if ctx:
                 await ctx.report_progress(100, 100)
                 if result.get("success"):
@@ -172,7 +182,15 @@ def register_component_tools(mcp: FastMCP) -> None:
             await ctx.report_progress(10, 100)
       
             
-        result = kicad_subprocess.save_board(project_path)
+        #result = kicad_subprocess.save_board(project_path)
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None,  # Use default pool executer
+            kicad_subprocess.save_board,
+            project_path
+            )
+
             
         if ctx:
             await ctx.report_progress(100, 100)

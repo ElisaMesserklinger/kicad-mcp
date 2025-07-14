@@ -2,13 +2,19 @@
 
 import sys
 import json
-import os
 from pathlib import Path
+import logging
+import threading
+import os
+
+sys.stdout.flush()
 
 # Project Path Setup
-project_root = Path("c:/Git/kicad-mcp/kicad_mcp/utils")
+project_root = Path("C:/Git/kicad-mcp/kicad_mcp/utils")
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root.parent))  # Add parent directory too
+
+logging.basicConfig(filename="C:\Git\kicad-mcp\mcp_sunprocess.log", level=logging.DEBUG)
 
 
 try:
@@ -45,14 +51,19 @@ if __name__ == "__main__":
         if method_name == "load_board":
             result = board_manager.load_board(params["project_path"])
             if result["success"]:
+                logging.debug("Successfully loaded board in subprocess")
                 component_manager.set_board(board_manager.get_board())
+                logging.debug("TEST")
+                logging.debug(json.dumps(result))
+
             print(json.dumps(result))
+           
         
         elif method_name == "place_component_full":
             project_path = params["project_path"]
             
             # Step 1: Load board
-            print("DEBUG: Loading board...", file=sys.stderr)
+            logging.debug("DEBUG: Loading board...")
             load_result = board_manager.load_board(project_path)
             if not load_result["success"]:
                 print(json.dumps(load_result))
@@ -60,30 +71,30 @@ if __name__ == "__main__":
             
             # Set board in component manager
             component_manager.set_board(board_manager.get_board())
-            print("DEBUG: Board loaded successfully", file=sys.stderr)
+            logging.debug("DEBUG: Board loaded successfully")
             
             # Step 2: Place component
-            print("DEBUG: Placing component...", file=sys.stderr)
+            logging.debug("DEBUG: Placing component...")
             footprint = component_manager.create_footprint(
                 component_id=params["component_id"],
                 position=params["position"],
+                library=params["library"],
                 reference=params.get("reference"),
                 value=params.get("value"),
                 rotation=params.get("rotation", 0),
                 layer=params.get("layer", "F.Cu"),
-                library=params.get("library")
             )
             component_info = component_manager.place_footprint(footprint)
-            print("DEBUG: Component placed successfully", file=sys.stderr)
+            logging.debug("DEBUG: Component placed successfully")
             
             # Step 3: Save board
-            print("DEBUG: Saving board...", file=sys.stderr)
+            logging.debug("DEBUG: Saving board...")
             save_result = board_manager.save_board(params.get("output_path"))
             if not save_result["success"]:
                 print(json.dumps(save_result))
                 sys.exit(1)
             
-            print("DEBUG: Board saved successfully", file=sys.stderr)
+            logging.debug("DEBUG: Board saved successfully")
             
             # Return combined result
             result = {
@@ -100,6 +111,7 @@ if __name__ == "__main__":
                 "board_info": load_result.get("board_info", {}),
                 "save_info": save_result
             }
+            logging.debug(json.dumps(result))
             print(json.dumps(result))
         
         elif method_name == "save_board":
