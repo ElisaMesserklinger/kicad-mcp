@@ -12,7 +12,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('kicad_mcp.log'),  # Also log to file
-        logging.StreamHandler(sys.stderr)  # Log to stderr
     ]
 )
 
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 from kicad_mcp.utils.kicad_bridge import KiCadBridge
 
-# Initialize with better error handling
 try:
     kicad_subprocess = KiCadBridge()
     logger.info("KiCadBridge initialized successfully")
@@ -32,7 +30,7 @@ def register_component_tools(mcp: FastMCP) -> None:
     """Register component placement tools using direct pcbnew API."""
     
     @mcp.tool()
-    def load_pcb_board(project_path: str, ctx: Context) -> Dict[str, Any]:
+    async def load_pcb_board(project_path: str, ctx: Context) -> Dict[str, Any]:
         """Load a KiCad PCB board for component operations.
         
         Args:
@@ -46,15 +44,15 @@ def register_component_tools(mcp: FastMCP) -> None:
         # Check if KiCadBridge is available
         if kicad_subprocess is None:
             error_msg = "KiCadBridge not initialized"
-            #ctx.error(error_msg)
+            ctx.error(error_msg)
             return {"success": False, "error": error_msg}
         
-        #ctx.info(f"Loading PCB board from {project_path}")
-        #await ctx.report_progress(10, 100)
+        ctx.info(f"Loading PCB board from {project_path}")
+        await ctx.report_progress(10, 100)
         
         # Log the exact path being used
-        #ctx.info(f"Absolute path: {os.path.abspath(project_path)}")
-        #ctx.info(f"Path exists: {os.path.exists(project_path)}")
+        ctx.info(f"Absolute path: {os.path.abspath(project_path)}")
+        ctx.info(f"Path exists: {os.path.exists(project_path)}")
         logger.debug(f"Absolute path: {os.path.abspath(project_path)}")
         logger.debug(f"Path exists: {os.path.exists(project_path)}")
 
@@ -62,8 +60,10 @@ def register_component_tools(mcp: FastMCP) -> None:
         # Check if corresponding PCB file exists
         if project_path.endswith('.kicad_pro'):
             pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-            #ctx.info(f"PCB file path: {pcb_path}")
-            #ctx.info(f"PCB file exists: {os.path.exists(pcb_path)}")
+            ctx.info(f"PCB file path: {pcb_path}")
+            ctx.info(f"PCB file exists: {os.path.exists(pcb_path)}")
+        else:
+            pcb_path = project_path
       
         try:
             # Add timeout handling and better error reporting
@@ -71,11 +71,9 @@ def register_component_tools(mcp: FastMCP) -> None:
             logger.info("Starting board load operation...")
             
             result = kicad_subprocess.load_board(pcb_path)
-            logger.debug("WE MADE IT")
 
-            #await ctx.report_progress(100, 100)
+            await ctx.report_progress(100, 100)
             
-            '''
             if result.get("success"):
                 ctx.info("Board loaded successfully")
                 logger.info("Board loaded successfully")
@@ -85,7 +83,6 @@ def register_component_tools(mcp: FastMCP) -> None:
                 ctx.error(f"Board load failed: {error_msg}")
                 logger.error("Board failed to load")
             
-            '''
             return result or {
             "success": False,
             "error": "Load Board Failed with an unkown error"
@@ -134,6 +131,12 @@ def register_component_tools(mcp: FastMCP) -> None:
             Dict with success status and component info
         """
 
+        
+        # Check if KiCadBridge is available
+        if kicad_subprocess is None:
+            error_msg = "KiCadBridge not initialized"
+            ctx.error(error_msg)
+            return {"success": False, "error": error_msg}
        
         if ctx:
             ctx.info(f"Placing component {component_id} at {position}")
@@ -144,7 +147,6 @@ def register_component_tools(mcp: FastMCP) -> None:
         
         try:
             
-        
             result = kicad_subprocess.place_component(
                 project_path=pcb_path,
                 component_id=component_id,
@@ -173,32 +175,89 @@ def register_component_tools(mcp: FastMCP) -> None:
             if ctx:
                 ctx.error(error_msg)
             return {"success": False, "error": error_msg}
-    
-    @mcp.tool()
-    async def save_pcb_board(project_path: str, ctx: Context) -> Dict[str, Any]:
-        """Save the current PCB board."""
-        if ctx:
-            ctx.info("Saving PCB board")
-            await ctx.report_progress(10, 100)
-      
-            
-        #result = kicad_subprocess.save_board(project_path)
-
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(
-            None,  # Use default pool executer
-            kicad_subprocess.save_board,
-            project_path
-            )
-
-            
-        if ctx:
-            await ctx.report_progress(100, 100)
-            if result.get("success"):
-                ctx.info("Board saved successfully")
-            else:
-                ctx.error(result.get("error", "Failed to save board"))
         
-        return result
+    @mcp.tool()
+    async def move_component(
+    project_path: str,
+    reference: str,
+    position: Dict[str, Any],
+    rotation: Optional[float] = None,
+    ctx: Context = None
+    ) -> Dict[str, Any]:
+        """Move a component to a new position on the PCB.
+        
+        Args:
+            project_path: Path to the .kicad_pro file
+            reference: Reference designator of the component (e.g., 'R5', 'C1', 'U3')
+            position: Position dict with x, y coordinates in mm
+            rotation: Optional new rotation in degrees (default: no rotation change)
+            
+        Returns:
+            Dict with success status and component info
+        """
 
-    
+        # Check if KiCadBridge is available
+        if kicad_subprocess is None:
+            error_msg = "KiCadBridge not initialized"
+            ctx.error(error_msg)
+            return {"success": False, "error": error_msg}
+        
+        if ctx:
+            ctx.info(f"Moving component {reference} to {position}")
+            logger.debug("Ready to move component:")
+            await ctx.report_progress(10, 100)
+        
+        # Convert project path to PCB path
+        if project_path.endswith('.kicad_pro'):
+            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
+        else:
+            pcb_path = project_path
+        
+        # Log the operation
+        ctx.info(f"Moving component {reference} to position {position}")
+        logger.info(f"Moving component {reference} to position {position}")
+        
+        try:
+            # Validate position dictionary
+            if not isinstance(position, dict):
+                raise ValueError("Position must be a dictionary")
+            
+            required_keys = ['x', 'y']
+            for key in required_keys:
+                if key not in position:
+                    raise ValueError(f"Position dictionary missing required key: {key}")
+            
+            # Validate coordinates
+            if not isinstance(position['x'], (int, float)):
+                raise ValueError("X coordinate must be a number")
+            if not isinstance(position['y'], (int, float)):
+                raise ValueError("Y coordinate must be a number")
+            
+            # Validate rotation if provided
+            if rotation is not None and not isinstance(rotation, (int, float)):
+                raise ValueError("Rotation must be a number")
+            
+            # Call the KiCad bridge to move the component
+            result = kicad_subprocess.move_component(
+                project_path=pcb_path,
+                reference=reference,
+                position=position,
+                rotation=rotation
+            )
+            
+            if ctx:
+                await ctx.report_progress(100, 100)
+                if result.get("success"):
+                    ctx.info(f"Component {reference} moved successfully")
+                else:
+                    ctx.error(f"Component move failed: {result.get('error')}")
+            
+            return result
+            
+        except Exception as e:
+            error_msg = f"Error moving component {reference}: {str(e)}"
+            if ctx:
+                ctx.error(error_msg)
+            logger.error(error_msg)
+            return {"success": False, "error": error_msg, "reference": reference}
+

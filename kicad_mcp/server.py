@@ -27,6 +27,8 @@ from kicad_mcp.tools.netlist_tools import register_netlist_tools
 from kicad_mcp.tools.pattern_tools import register_pattern_tools
 #added own tool
 from  kicad_mcp.tools.component_tool import register_component_tools
+from  kicad_mcp.tools.create_foodprint_tools import register_pdf_tools
+
 
 
 
@@ -156,6 +158,7 @@ def create_server() -> FastMCP:
     register_pattern_tools(mcp)
     #added own tools
     register_component_tools(mcp)
+    register_pdf_tools(mcp)
 
     
     # Register prompts

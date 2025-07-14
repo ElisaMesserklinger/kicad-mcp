@@ -30,7 +30,7 @@ try:
     from utils.board_utils import BoardManager
     UTILS_AVAILABLE = True
 except ImportError as e:
-    print(json.dumps({"success": False, "error": f"Utils import failed: {{str(e)}}"}, indent=2))
+    print(json.dumps({"success": False, "error": f"Utils import failed: {str(e)}"}, indent=2))
     UTILS_AVAILABLE = False
 
 # Global instances
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             # Return combined result
             result = {
                 "success": True,
-                "message": f"Component placed and saved: {{params['component_id']}}",
+                "message": f"Component placed and saved: {params['component_id']}",
                 "component": {
                     "reference": component_info.reference,
                     "value": component_info.value,
@@ -113,10 +113,67 @@ if __name__ == "__main__":
             }
             logging.debug(json.dumps(result))
             print(json.dumps(result))
-        
-        elif method_name == "save_board":
-            result = board_manager.save_board(params.get("output_path"))
-            print(json.dumps(result))
+
+        elif method_name == "move_component":
+            project_path = params["project_path"]
+            reference = params.get("reference")
+            position = params["position"]
+            rotation = params.get("rotation")
+            
+            # Step 1: Load board
+            logging.debug("DEBUG: Loading board for move operation...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+            
+            # Step 2: Move component
+            logging.debug("DEBUG: Moving component ...")
+            try:
+                move_result = component_manager.move_component(
+                    reference=reference,
+                    position=position,
+                    rotation=rotation
+                )
+                
+                logging.debug(move_result.reference)    
+                logging.debug("DEBUG: Component moved successfully")
+                
+                # Step 3: Save board
+                logging.debug("DEBUG: Saving board...")
+                save_result = board_manager.save_board()
+                if not save_result["success"]:
+                    print(json.dumps(save_result))
+                    sys.exit(1)
+                
+                logging.debug("DEBUG: Board saved successfully")
+                
+                # Return combined result
+                result = {
+                    "success": True,
+                    "message": "Component moved successfully",
+                    "component": {
+                        "reference": reference,
+                        "position": position,
+                        "rotation": rotation
+                    },
+                    "board_info": load_result.get("board_info", {}),
+                    "save_info": save_result
+                }
+                logging.debug(json.dumps(result))
+                print(json.dumps(result))
+                
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "error": f"Failed to move component: {str(e)}"
+                }
+                logging.error(json.dumps(error_result))
+                print(json.dumps(error_result))
         
         else:
             print(json.dumps({"success": False, "error": f"Unknown method: {method_name}"}))

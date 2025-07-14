@@ -270,6 +270,64 @@ class ComponentManager:
         
         return components
     
+    def rotate_component(self, reference: str, angle: float) -> dict:
+        """
+        Rotate a component to a specific angle
+        
+        Args:
+            reference: Component reference designator (e.g., "R1", "U5")
+            angle: Absolute rotation angle in degrees (0-360)
+            
+        Returns:
+            Dict with rotation results
+        """
+        try:
+            if not self.board:
+                return {
+                    "success": False,
+                    "error": "No board loaded. Call set_board() first."
+                }
+            
+            # Find the component by reference
+            footprint = self.board.FindFootprintByReference(reference)
+            if not footprint:
+                return {
+                    "success": False,
+                    "error": f"Component '{reference}' not found on board"
+                }
+            
+            # Get current rotation for comparison
+            current_angle = footprint.GetOrientationDegrees()
+            
+            # Set new rotation
+            # Note: SetOrientationDegrees() accepts degrees directly, not decidegrees
+            footprint.SetOrientationDegrees(angle)
+            
+            # Get component position for reference
+            position = footprint.GetPosition()
+            
+            return {
+                "success": True,
+                "reference": reference,
+                "previous_angle": current_angle,
+                "new_angle": angle,
+                "position": {
+                    "x": position.x / 1000000,  # Convert from nanometers to mm
+                    "y": position.y / 1000000
+                },
+                "footprint": footprint.GetFPID().GetLibItemName().GetUTF8(),
+                "value": footprint.GetValue()
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Component rotation failed: {str(e)}"
+            }
+
+    
+
+    
     def get_board_info(self) -> Dict[str, Any]:
         """Get board information.
         
