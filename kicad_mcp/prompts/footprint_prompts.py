@@ -200,80 +200,88 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
 
     Return only the complete `.kicad_mod` file content for your specified package.
             Here is just a example for a Format without any real values:
-            (module "PACKAGE_NAME" (layer F.Cu)
-            (descr "Brief description of package")
-            (tags "Package tags here")
-            (attr smd)
-
-            (property "Reference" "REF**"
-                (at 0 -<REF_Y_OFFSET> 0)
-                (layer "F.SilkS")
-                (uuid "<generate ID>")
+            (footprint "<PACKAGE_NAME>"
+            (layer <LAYER>)
+            (descr "<DESCRIPTION>")
+            (tags "<TAGS>")
+            (attr <ATTRIBUTE>)
+            
+            (property "Reference" "<REFERENCE>"
+                (at <REF_X> <REF_Y> <REF_ROTATION>)
+                (layer "<REF_LAYER>")
+                (uuid "<REF_UUID>")
                 (effects
-                (font
-                    (size 1.27 1.27)
-                    (thickness 0.254)
-                )
+                    (font
+                        (size <REF_FONT_SIZE_X> <REF_FONT_SIZE_Y>)
+                        (thickness <REF_FONT_THICKNESS>)
+                    )
                 )
             )
-            (property "Value" "PACKAGE_NAME"
-                (at 0 <VAL_Y_OFFSET> 0)
-                (layer "F.Fab")
-                (uuid "<generate ID>")
+            
+            (property "Value" "<VALUE>"
+                (at <VAL_X> <VAL_Y> <VAL_ROTATION>)
+                (layer "<VAL_LAYER>")
+                (uuid "<VAL_UUID>")
                 (effects
-                (font
-                    (size 1.27 1.27)
-                    (thickness 0.254)
-                )
+                    (font
+                        (size <VAL_FONT_SIZE_X> <VAL_FONT_SIZE_Y>)
+                        (thickness <VAL_FONT_THICKNESS>)
+                    )
                 )
             )
-            (property "Datasheet" ""
-                (at 0 0 0)
-                (layer "F.Fab")
-                (hide yes)
-                (uuid "<generate ID>")
+            
+            (property "Datasheet" "<DATASHEET>"
+                (at <DS_X> <DS_Y> <DS_ROTATION>)
+                (layer "<DS_LAYER>")
+                (hide <DS_HIDE>)
+                (uuid "<DS_UUID>")
                 (effects
-                (font
-                    (size 1.27 1.27)
-                    (thickness 0.15)
-                )
+                    (font
+                        (size <DS_FONT_SIZE_X> <DS_FONT_SIZE_Y>)
+                        (thickness <DS_FONT_THICKNESS>)
+                    )
                 )
             )
-            (property "Description" ""
-                (at 0 0 0)
-                (layer "F.Fab")
-                (hide yes)
-                (uuid "<generate ID>")
+            
+            (property "Description" "<DESCRIPTION_TEXT>"
+                (at <DESC_X> <DESC_Y> <DESC_ROTATION>)
+                (layer "<DESC_LAYER>")
+                (hide <DESC_HIDE>)
+                (uuid "<DESC_UUID>")
                 (effects
-                (font
-                    (size 1.27 1.27)
-                    (thickness 0.15)
-                )
+                    (font
+                        (size <DESC_FONT_SIZE_X> <DESC_FONT_SIZE_Y>)
+                        (thickness <DESC_FONT_THICKNESS>)
+                    )
                 )
             )
-
-            (fp_line (start -<CRTYD_X> -<CRTYD_Y>) (end <CRTYD_X> -<CRTYD_Y>) (layer F.CrtYd) (width 0.05))
-            (fp_line (start <CRTYD_X> -<CRTYD_Y>) (end <CRTYD_X> <CRTYD_Y>) (layer F.CrtYd) (width 0.05))
-            (fp_line (start <CRTYD_X> <CRTYD_Y>) (end -<CRTYD_X> <CRTYD_Y>) (layer F.CrtYd) (width 0.05))
-            (fp_line (start -<CRTYD_X> <CRTYD_Y>) (end -<CRTYD_X> -<CRTYD_Y>) (layer F.CrtYd) (width 0.05))
-
-            (fp_line (start -<BODY_X> -<BODY_Y>) (end <BODY_X> -<BODY_Y>) (layer F.Fab) (width 0.1))
-            (fp_line (start <BODY_X> -<BODY_Y>) (end <BODY_X> <BODY_Y>) (layer F.Fab) (width 0.1))
-            (fp_line (start <BODY_X> <BODY_Y>) (end -<BODY_X> <BODY_Y>) (layer F.Fab) (width 0.1))
-            (fp_line (start -<BODY_X> <BODY_Y>) (end -<BODY_X> -<BODY_Y>) (layer F.Fab) (width 0.1))
-
-            (fp_line (start -<BODY_X> -<BODY_Y>) (end <BODY_X> -<BODY_Y>) (layer F.SilkS) (width 0.2))
-            (fp_line (start <BODY_X> -<BODY_Y>) (end <BODY_X> <BODY_Y>) (layer F.SilkS) (width 0.2))
-            (fp_line (start <BODY_X> <BODY_Y>) (end -<BODY_X> <BODY_Y>) (layer F.SilkS) (width 0.2))
-            (fp_line (start -<BODY_X> <BODY_Y>) (end -<BODY_X> -<BODY_Y>) (layer F.SilkS) (width 0.2))
-
-            (fp_circle (center <PIN1_X> <PIN1_Y>) (end <PIN1_X> <PIN1_Y + small_offset>) (layer F.SilkS) (width 0.2))
-
-            (pad 1 smd <PAD_SHAPE> (at -<PIN_X> -<PIN_Y1>) (size <PAD_WIDTH> <PAD_HEIGHT>) (layers F.Cu F.Paste F.Mask))
-            (pad 2 smd <PAD_SHAPE> (at -<PIN_X> -<PIN_Y2>) (size <PAD_WIDTH> <PAD_HEIGHT>) (layers F.Cu F.Paste F.Mask))
+            
+            (fp_line (start <CRTYD_X1> <CRTYD_Y1>) (end <CRTYD_X2> <CRTYD_Y1>) (layer <CRTYD_LAYER>) (width <CRTYD_WIDTH>))
+            (fp_line (start <CRTYD_X2> <CRTYD_Y1>) (end <CRTYD_X2> <CRTYD_Y2>) (layer <CRTYD_LAYER>) (width <CRTYD_WIDTH>))
+            (fp_line (start <CRTYD_X2> <CRTYD_Y2>) (end <CRTYD_X1> <CRTYD_Y2>) (layer <CRTYD_LAYER>) (width <CRTYD_WIDTH>))
+            (fp_line (start <CRTYD_X1> <CRTYD_Y2>) (end <CRTYD_X1> <CRTYD_Y1>) (layer <CRTYD_LAYER>) (width <CRTYD_WIDTH>))
+            
+            (fp_line (start <FAB_X1> <FAB_Y1>) (end <FAB_X2> <FAB_Y1>) (layer <FAB_LAYER>) (width <FAB_WIDTH>))
+            (fp_line (start <FAB_X2> <FAB_Y1>) (end <FAB_X2> <FAB_Y2>) (layer <FAB_LAYER>) (width <FAB_WIDTH>))
+            (fp_line (start <FAB_X2> <FAB_Y2>) (end <FAB_X1> <FAB_Y2>) (layer <FAB_LAYER>) (width <FAB_WIDTH>))
+            (fp_line (start <FAB_X1> <FAB_Y2>) (end <FAB_X1> <FAB_Y1>) (layer <FAB_LAYER>) (width <FAB_WIDTH>))
+            
+            (fp_line (start <SILK_X1> <SILK_Y1>) (end <SILK_X2> <SILK_Y1>) (layer <SILK_LAYER>) (width <SILK_WIDTH>))
+            (fp_line (start <SILK_X2> <SILK_Y1>) (end <SILK_X2> <SILK_Y2>) (layer <SILK_LAYER>) (width <SILK_WIDTH>))
+            (fp_line (start <SILK_X2> <SILK_Y2>) (end <SILK_X1> <SILK_Y2>) (layer <SILK_LAYER>) (width <SILK_WIDTH>))
+            (fp_line (start <SILK_X1> <SILK_Y2>) (end <SILK_X1> <SILK_Y1>) (layer <SILK_LAYER>) (width <SILK_WIDTH>))
+            
+            (fp_circle (center <PIN1_IND_X> <PIN1_IND_Y>) (end <PIN1_IND_X2> <PIN1_IND_Y2>) (layer <PIN1_LAYER>) (width <PIN1_WIDTH>))
+            
+            (pad <PAD1_NUMBER> <PAD1_TYPE> <PAD1_SHAPE> (at <PAD1_X> <PAD1_Y> <PAD1_ROTATION>) (size <PAD1_SIZE_X> <PAD1_SIZE_Y>) (layers <PAD1_LAYERS>))
+            (pad <PAD2_NUMBER> <PAD2_TYPE> <PAD2_SHAPE> (at <PAD2_X> <PAD2_Y> <PAD2_ROTATION>) (size <PAD2_SIZE_X> <PAD2_SIZE_Y>) (layers <PAD2_LAYERS>))
+            (pad <PAD3_NUMBER> <PAD3_TYPE> <PAD3_SHAPE> (at <PAD3_X> <PAD3_Y> <PAD3_ROTATION>) (size <PAD3_SIZE_X> <PAD3_SIZE_Y>) (layers <PAD3_LAYERS>))
             ...
-            (pad N smd <PAD_SHAPE> (at <PIN_X> <PIN_YN>) (size <PAD_WIDTH> <PAD_HEIGHT>) (layers F.Cu F.Paste F.Mask))
-            )
+            (pad <PADN_NUMBER> <PADN_TYPE> <PADN_SHAPE> (at <PADN_X> <PADN_Y> <PADN_ROTATION>) (size <PADN_SIZE_X> <PADN_SIZE_Y>) (layers <PADN_LAYERS>))
+            
+            (pad <THERM_PAD_NUMBER> <THERM_PAD_TYPE> <THERM_PAD_SHAPE> (at <THERM_PAD_X> <THERM_PAD_Y> <THERM_PAD_ROTATION>) (size <THERM_PAD_SIZE_X> <THERM_PAD_SIZE_Y>) (layers <THERM_PAD_LAYERS>))
+        )
+
 
 
             Placeholder	Description:
@@ -436,7 +444,7 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
         Notes: 
         - The values for the property fields should not all be on the same position but a little under the symbol. 
         - Unconnected Pins should not be displayed
-
+        - To avoid overlapping, the font size of the pin labels can be slightly reduced when there are many labels.
 
         Return only the complete .kicad_sym file content for your specified component.
         """

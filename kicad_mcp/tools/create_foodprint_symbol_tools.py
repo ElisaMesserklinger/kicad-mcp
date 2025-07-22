@@ -93,11 +93,20 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     
     
     @mcp.tool()
-    def validate_symbol(symbol_content: str) -> Dict[str, Any]:
+    def validate_symbol_structure(symbol_content: str) -> Dict[str, Any]:
         """
         Check Structure of Symbol
         """
         result = validate_kicad_symbol(symbol_content)
+        return result
+    
+
+    @mcp.tool()
+    def validate_footprint_structure(footprint_content: str) -> Dict[str, Any]:
+        """
+        Check Structure of Footprint
+        """
+        result = validate_kicad_footprint(footprint_content)
         return result
 
 

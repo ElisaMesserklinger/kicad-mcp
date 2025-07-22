@@ -383,7 +383,7 @@ def find_insert_position(content: str) -> int:
                 return i
     return -1 
 
-def find_blocks_symbol(symbol_data, block_name):
+def find_blocks(symbol_data, block_name):
     """Recursively find blocks like (property ...) or (symbol ...) for validation of symbol file"""
     matches = []
 
@@ -399,7 +399,7 @@ def find_blocks_symbol(symbol_data, block_name):
 
 
 def validate_properties_symbol(symbol_data):
-    props = find_blocks_symbol(symbol_data, "property")
+    props = find_blocks(symbol_data, "property")
     found = {
         p[1]  # p[1] is the property name (e.g., 'Reference')
         for p in props
@@ -419,7 +419,7 @@ def validate_top_level_keys(parsed_data):
     return missing_keys
 
 def validate_pins_symbol(symbol_data):
-    pin_blocks = find_blocks_symbol(symbol_data, "pin")
+    pin_blocks = find_blocks(symbol_data, "pin")
     valid_pins = []
     for pin in pin_blocks:
         try:
@@ -483,3 +483,28 @@ def validate_kicad_symbol(symbolContent):
 
     except Exception as e:
         return {"success": False, "error": f"Error parsing file: {str(e)}"}
+    
+
+def validate_kicad_footprint(footprint_content: str):
+    try:
+        parsed = sexpdata.loads(footprint_content)
+
+          
+        if (isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], sexpdata.Symbol) and parsed[0].value() == "footprint"):
+            footprint_block = parsed 
+        else:
+            footprint_block = None
+        
+        if not footprint_block:
+            return {"success": False, "error": "No (footprint ...) block found."}
+        
+
+        # check for pads
+        pad_blocks = find_blocks([footprint_block], "pad")
+        if not pad_blocks:
+            return {"success": False, "error": "No pad blocks found in module."}
+
+        return {"success": True}
+
+    except Exception as e:
+        return {"success": False, "error": f"Parsing failed: {e}"}
