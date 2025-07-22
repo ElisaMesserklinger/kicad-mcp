@@ -44,7 +44,7 @@ def register_export_tools(mcp: FastMCP) -> None:
             app_context = ctx.request_context.lifespan_context
             # Removed check for kicad_modules_available as we now use CLI
             
-            print(f"Generating thumbnail via CLI for project: {project_path}")
+            #print(f"Generating thumbnail via CLI for project: {project_path}")
 
             if not os.path.exists(project_path):
                 print(f"Project not found: {project_path}")
@@ -59,7 +59,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                 return None
 
             pcb_file = files["pcb"]
-            print(f"Found PCB file: {pcb_file}")
+            #print(f"Found PCB file: {pcb_file}")
 
             # Check cache
             cache_key = f"thumbnail_cli_{pcb_file}_{os.path.getmtime(pcb_file)}"
@@ -171,7 +171,7 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[I
             pcb_file
         ]
 
-        print(f"Running command: {' '.join(cmd)}")
+        #print(f"Running command: {' '.join(cmd)}")
         await ctx.report_progress(50, 100)
 
         # Run the command
@@ -190,7 +190,7 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[I
             with open(output_file, 'rb') as f:
                 img_data = f.read()
 
-            print(f"Successfully generated thumbnail with CLI, size: {len(img_data)} bytes")
+            #print(f"Successfully generated thumbnail with CLI, size: {len(img_data)} bytes")
             await ctx.report_progress(90, 100)
             # Inform user about the saved file
             await ctx.info(f"Thumbnail saved to: {output_file}")

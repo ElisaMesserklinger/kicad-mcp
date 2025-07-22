@@ -157,6 +157,12 @@ The KiCad MCP Server provides several key features, each with detailed documenta
 - **Circuit Pattern Recognition**: Automatically identify common circuit patterns in your schematics
   - *Example:* "What power supply topologies am I using in my IoT device?" → Identifies buck, boost, or linear regulators
 
+- **File Management & Automation**: Scans configured datasheet directories (DATASHEET_PATH) for .pdf files, exposing metadata and URLs for analysis or display. But Claude’s PDF URL analysis is rate-limited, so use local PDF parsing.
+   - *Example:* "Safe the generated Footprint and Symbol Files and add them to the Library" → automate the  process of file creation, directory handling, and global table integration
+
+- **Component Management**: Can place a Component in a PCB File
+- *Example:* "Add a Resistor to this project: ..." → places a resistor randomly in the pcb file of the specified Project 
+
 For more examples and details on each feature, see the dedicated guides in the documentation. You can also ask the LLM what tools it has access to!
 
 ## Natural Language Interaction
@@ -194,6 +200,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [Design Rule Checking (DRC)](docs/drc_guide.md)
 - [PCB Visualization](docs/thumbnail_guide.md)
 - [Circuit Pattern Recognition](docs/pattern_guide.md)
+- [Footprint and Symbol generation](docs/footprint_symbol_generation_guide.md)
 - [Prompt Templates](docs/prompt_guide.md)
 
 ## Configuration

@@ -32,7 +32,7 @@ def check_for_cli_api() -> bool:
                 
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode == 0:
-                print(f"Found working kicad-cli: {kicad_cli}")
+                #print(f"Found working kicad-cli: {kicad_cli}")
                 return True
         
         # Check common installation locations if not found in PATH
@@ -59,12 +59,12 @@ def check_for_cli_api() -> bool:
         # Check each potential path
         for path in potential_paths:
             if os.path.exists(path) and os.access(path, os.X_OK):
-                print(f"Found kicad-cli at common location: {path}")
+                #print(f"Found kicad-cli at common location: {path}")
                 return True
         
-        print("KiCad CLI API is not available")
+        #print("KiCad CLI API is not available")
         return False
         
     except Exception as e:
-        print(f"Error checking for KiCad CLI API: {str(e)}")
+        #print(f"Error checking for KiCad CLI API: {str(e)}")
         return False

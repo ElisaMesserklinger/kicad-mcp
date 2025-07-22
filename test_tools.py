@@ -22,6 +22,7 @@ from typing import List, Dict, Any
 import os
 
 from kicad_mcp.utils.kicad_bridge import KiCadBridge
+from kicad_mcp.utils.create_foodprint_symbol_utils import *
 
 def test_place_component_workflow():
     """Test the complete workflow: load board -> place component -> save board."""
@@ -215,8 +216,273 @@ def analyze_pdfs(pdf_url: str, prompt: str) -> List[Dict[str, Any]]:
 
 
 
+test = f"""
+(module "SOT-23-5_LM7321" (layer F.Cu)
+  (descr "SOT-23-5 package for LM7321 single op-amp")
+  (tags "SOT-23-5 LM7321 opamp")
+  (attr smd)
+
+  (property "Reference" "U**"
+    (at 0 -2.5 0)
+    (layer "F.SilkS")
+    (uuid "12345678-1234-1234-1234-123456789001")
+    (effects
+      (font
+        (size 1.27 1.27)
+        (thickness 0.254)
+      )
+    )
+  )
+  (property "Value" "LM7321"
+    (at 0 2.5 0)
+    (layer "F.Fab")
+    (uuid "12345678-1234-1234-1234-123456789002")
+    (effects
+      (font
+        (size 1.27 1.27)
+        (thickness 0.254)
+      )
+    )
+  )
+  (property "Datasheet" "https://www.ti.com/lit/ds/symlink/lm7321.pdf"
+    (at 0 0 0)
+    (layer "F.Fab")
+    (hide yes)
+    (uuid "12345678-1234-1234-1234-123456789003")
+    (effects
+      (font
+        (size 1.27 1.27)
+        (thickness 0.15)
+      )
+    )
+  )
+  (property "Description" "Single Rail-to-Rail Op-Amp, SOT-23-5"
+    (at 0 0 0)
+    (layer "F.Fab")
+    (hide yes)
+    (uuid "12345678-1234-1234-1234-123456789004")
+    (effects
+      (font
+        (size 1.27 1.27)
+        (thickness 0.15)
+      )
+    )
+  )
+
+  ; Courtyard
+  (fp_line (start -1.7 -1.75) (end 1.7 -1.75) (layer F.CrtYd) (width 0.05))
+  (fp_line (start 1.7 -1.75) (end 1.7 1.75) (layer F.CrtYd) (width 0.05))
+  (fp_line (start 1.7 1.75) (end -1.7 1.75) (layer F.CrtYd) (width 0.05))
+  (fp_line (start -1.7 1.75) (end -1.7 -1.75) (layer F.CrtYd) (width 0.05))
+
+  ; Fabrication outline
+  (fp_line (start -0.725 -1.45) (end 0.725 -1.45) (layer F.Fab) (width 0.1))
+  (fp_line (start 0.725 -1.45) (end 0.725 1.45) (layer F.Fab) (width 0.1))
+  (fp_line (start 0.725 1.45) (end -0.725 1.45) (layer F.Fab) (width 0.1))
+  (fp_line (start -0.725 1.45) (end -0.725 -1.45) (layer F.Fab) (width 0.1))
+
+  ; Silkscreen
+  (fp_line (start -0.825 -1.55) (end 0.825 -1.55) (layer F.SilkS) (width 0.2))
+  (fp_line (start 0.825 -1.55) (end 0.825 1.55) (layer F.SilkS) (width 0.2))
+  (fp_line (start 0.825 1.55) (end -0.825 1.55) (layer F.SilkS) (width 0.2))
+  (fp_line (start -0.825 1.55) (end -0.825 -1.55) (layer F.SilkS) (width 0.2))
+
+  ; Pin 1 indicator
+  (fp_circle (center -1.2 -0.95) (end -1.1 -0.95) (layer F.SilkS) (width 0.2))
+
+  ; Pads
+  (pad 1 smd rect (at -0.95 -0.95) (size 0.6 0.3) (layers F.Cu F.Paste F.Mask))
+  (pad 2 smd rect (at -0.95 0.95) (size 0.6 0.3) (layers F.Cu F.Paste F.Mask))
+  (pad 3 smd rect (at 0.95 0.95) (size 0.6 0.3) (layers F.Cu F.Paste F.Mask))
+  (pad 4 smd rect (at 0.95 0) (size 0.6 0.3) (layers F.Cu F.Paste F.Mask))
+  (pad 5 smd rect (at 0.95 -0.95) (size 0.6 0.3) (layers F.Cu F.Paste F.Mask))
+)"""
 
 
+def test_saving_foodprint():
+    result = save_kicad_footprint(test, "SOT-23-5_LM7321", "c:/Users/messeel/KiCadProjects/KiCad/9.0/symbols/TI_OpAmps.pretty", "TI_OpAmps")
+    return result
+
+
+def test_saving_table():
+    result = save_kicad_footprint_symbol_to_table("C:/Users/messeel/KiCadProjects/KiCad/9.0/footprints/TI_OpAmps.pretty", "TI_OpAmps", "test", "symbol")
+    return result
+
+
+test_symbol = """
+(kicad_symbol_lib
+(version 20231120)
+(generator "kicad_symbol_editor")
+(generator_version 9.0)
+
+(symbol "LM7321_SOT-23-5"
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+
+    (property "Reference" "U"
+    (at -2.54 5.08 0)
+    (effects
+        (font
+        (size 1.27 1.27)
+        )
+    )
+    )
+
+    (property "Value" "LM7321"
+    (at 0 -5.08 0)
+    (effects
+        (font
+        (size 1.27 1.27)
+        )
+    )
+    )
+
+    (property "Footprint" "Texas_Instruments:SOT-23-5_2.9x1.6mm_P0.95mm"
+    (at 0 -7.62 0)
+    (effects
+        (font
+        (size 1.27 1.27)
+        )
+        (hide yes)
+    )
+    )
+
+    (property "Datasheet" "https://www.ti.com/lit/ds/symlink/lm7321.pdf"
+    (at 0 -10.16 0)
+    (effects
+        (font
+        (size 1.27 1.27)
+        )
+        (hide yes)
+    )
+    )
+
+    (property "Description" "Single Rail-to-Rail Input and Output ±15V High-Output Current Op Amp, SOT-23-5"
+    (at 0 -12.7 0)
+    (effects
+        (font
+        (size 1.27 1.27)
+        )
+        (hide yes)
+    )
+    )
+
+    (symbol "LM7321_SOT-23-5_0_1"
+    (polyline
+        (pts
+        (xy -5.08 5.08)
+        (xy 5.08 0)
+        (xy -5.08 -5.08)
+        (xy -5.08 5.08)
+        )
+        (stroke
+        (width 0.254)
+        (type default)
+        )
+        (fill
+        (type background)
+        )
+    )
+    )
+
+    (symbol "LM7321_SOT-23-5_1_1"
+    (pin power_in line
+        (at -2.54 7.62 270)
+        (length 3.81)
+        (name "V+"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+        (number "5"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+    )
+    (pin input line
+        (at -7.62 -2.54 0)
+        (length 2.54)
+        (name "-"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+        (number "4"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+    )
+    (pin input line
+        (at -7.62 2.54 0)
+        (length 2.54)
+        (name "+"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+        (number "3"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+    )
+    (pin power_in line
+        (at -2.54 -7.62 90)
+        (length 3.81)
+        (name "V-"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+        (number "2"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+    )
+    (pin output line
+        (at 7.62 0 180)
+        (length 2.54)
+        (name "~"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+        (number "1"
+        (effects
+            (font
+            (size 1.27 1.27)
+            )
+        )
+        )
+    )
+    )
+)
+)
+"""
+
+print(validate_kicad_symbol(test_symbol))
 #test_place_component_workflow()
 
 
@@ -233,8 +499,10 @@ def analyze_pdfs(pdf_url: str, prompt: str) -> List[Dict[str, Any]]:
 
 #"C:/Users/messeel/AppData/Local/Programs/KiCad/9.0/bin/python.exe" "C:\Git\kicad-mcp\kicad_mcp\utils\kicad_script_subprocess.py load_board" "{"project_path": "C:/Users/messeel/KiCadProjects/KiCad/test/test.kicad_pro"}
 
-pdf_url = "https://www.ti.com/lit/ds/symlink/lm7321.pdf"  # Replace with actual URL
-prompt = "What are the key specifications and features of this component?"
+#pdf_url = "https://www.ti.com/lit/ds/symlink/lm7321.pdf"  # Replace with actual URL
+#prompt = "What are the key specifications and features of this component?"
     
-result = analyze_pdfs(pdf_url, prompt)
-print(f"Analysis result: {result}")
+#result = analyze_pdfs(pdf_url, prompt)
+#print(f"Analysis result: {result}")
+
+#print(test_saving_symbol())

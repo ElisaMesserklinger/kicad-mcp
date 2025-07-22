@@ -27,7 +27,7 @@ from kicad_mcp.tools.netlist_tools import register_netlist_tools
 from kicad_mcp.tools.pattern_tools import register_pattern_tools
 #added own tool
 from  kicad_mcp.tools.component_tool import register_component_tools
-from  kicad_mcp.tools.create_foodprint_tools import register_pdf_tools
+from  kicad_mcp.tools.create_foodprint_symbol_tools import register_pdf_tools
 
 
 
@@ -37,6 +37,8 @@ from kicad_mcp.prompts.templates import register_prompts
 from kicad_mcp.prompts.drc_prompt import register_drc_prompts
 from kicad_mcp.prompts.bom_prompts import register_bom_prompts
 from kicad_mcp.prompts.pattern_prompts import register_pattern_prompts
+from kicad_mcp.prompts.footprint_prompts import register_footprint_prompts
+
 
 # Import context management
 from kicad_mcp.context import kicad_lifespan
@@ -167,6 +169,7 @@ def create_server() -> FastMCP:
     register_drc_prompts(mcp)
     register_bom_prompts(mcp)
     register_pattern_prompts(mcp)
+    register_footprint_prompts(mcp)
 
     # Register signal handlers and cleanup
     register_signal_handlers(mcp)

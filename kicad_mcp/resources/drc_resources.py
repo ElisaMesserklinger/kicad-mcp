@@ -8,6 +8,19 @@ from mcp.server.fastmcp import FastMCP
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.drc_history import get_drc_history
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
+import logging
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('mcp_sunprocess.log'),
+        logging.StreamHandler()
+
+    ]
+)
+
 
 def register_drc_resources(mcp: FastMCP) -> None:
     """Register DRC resources with the MCP server.
@@ -26,7 +39,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted DRC history report
         """
-        print(f"Generating DRC history report for project: {project_path}")
+        logging.debug(f"Generating DRC history report for project: {project_path}")
         
         if not os.path.exists(project_path):
             return f"Project not found: {project_path}"
@@ -156,7 +169,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
             return "PCB file not found in project"
         
         pcb_file = files["pcb"]
-        print(f"Found PCB file: {pcb_file}")
+        logging.debug(f"Found PCB file: {pcb_file}")
         
         # Try to run DRC via command line
         drc_results = run_drc_via_cli(pcb_file)

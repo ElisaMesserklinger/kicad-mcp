@@ -9,6 +9,7 @@ import platform
 import time
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+import logging
 
 # Directory for storing DRC history
 if platform.system() == "Windows":
@@ -67,7 +68,7 @@ def save_drc_result(project_path: str, drc_result: Dict[str, Any]) -> None:
             with open(history_path, 'r') as f:
                 history = json.load(f)
         except (json.JSONDecodeError, IOError) as e:
-            print(f"Error loading DRC history: {str(e)}")
+            #print(f"Error loading DRC history: {str(e)}")
             history = {"project_path": project_path, "entries": []}
     else:
         history = {"project_path": project_path, "entries": []}
@@ -86,9 +87,8 @@ def save_drc_result(project_path: str, drc_result: Dict[str, Any]) -> None:
     try:
         with open(history_path, 'w') as f:
             json.dump(history, f, indent=2)
-        print(f"Saved DRC history entry to {history_path}")
     except IOError as e:
-        print(f"Error saving DRC history: {str(e)}")
+        logging.error(f"Error saving DRC history: {str(e)}")
 
 
 def get_drc_history(project_path: str) -> List[Dict[str, Any]]:

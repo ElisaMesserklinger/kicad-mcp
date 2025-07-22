@@ -39,7 +39,7 @@ async def kicad_lifespan(server: FastMCP, kicad_modules_available: bool = False)
     logging.info(f"Starting KiCad MCP server initialization")
     
     # Resources initialization - Python path setup removed
-    # print("Setting up KiCad Python modules")
+    logging.info("Setting up KiCad Python modules")
     # kicad_modules_available = setup_kicad_python_path() # Now passed as arg
     logging.info(f"KiCad Python module availability: {kicad_modules_available} (Setup logic removed)")
     

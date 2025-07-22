@@ -4,6 +4,7 @@ Circuit pattern recognition tools for KiCad schematics.
 import os
 from typing import Dict, List, Any, Optional
 from mcp.server.fastmcp import FastMCP, Context
+import logging
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import extract_netlist, analyze_netlist
@@ -15,6 +16,15 @@ from kicad_mcp.utils.pattern_recognition import (
     identify_digital_interfaces,
     identify_microcontrollers,
     identify_sensor_interfaces
+)
+
+#Todo delete
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('test.log'),  # Also log to file
+    ]
 )
 
 def register_pattern_tools(mcp: FastMCP) -> None:
@@ -57,6 +67,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             ctx.info("Parsing schematic structure...")
             
             netlist_data = extract_netlist(schematic_path)
+            logging.debug("Extracted Netlist")
             
             if "error" in netlist_data:
                 ctx.info(f"Error extracting netlist: {netlist_data['error']}")
@@ -83,6 +94,8 @@ def register_pattern_tools(mcp: FastMCP) -> None:
                 "sensor_interface_circuits": [],
                 "other_patterns": []
             }
+
+            logging.debug("After identified patterns")
             
             # Identify power supply circuits
             await ctx.report_progress(60, 100)

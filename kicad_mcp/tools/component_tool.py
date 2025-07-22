@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, List
 from mcp.server.fastmcp import FastMCP, Context
 import subprocess
 
-# Configure logging properly for MCP
+
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

@@ -33,7 +33,10 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
             output_file = os.path.join(temp_dir, "drc_report.json")
             
             # Find kicad-cli executable
-            kicad_cli = find_kicad_cli()
+            #kicad_cli = find_kicad_cli()
+            from kicad_mcp.config import KICAD_APP_PATH
+            kicad_cli = os.path.join(KICAD_APP_PATH, "bin", "kicad-cli.exe")
+            
             if not kicad_cli:
                 print("kicad-cli not found in PATH or common installation locations")
                 results["error"] = "kicad-cli not found. Please ensure KiCad 9.0+ is installed and kicad-cli is available."
@@ -53,19 +56,19 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
                 pcb_file
             ]
             
-            print(f"Running command: {' '.join(cmd)}")
+            #print(f"Running command: {' '.join(cmd)}")
             process = subprocess.run(cmd, capture_output=True, text=True)
             
             # Check if the command was successful
             if process.returncode != 0:
-                print(f"DRC command failed with code {process.returncode}")
-                print(f"Error output: {process.stderr}")
+               # print(f"DRC command failed with code {process.returncode}")
+              #  print(f"Error output: {process.stderr}")
                 results["error"] = f"DRC command failed: {process.stderr}"
                 return results
             
             # Check if the output file was created
             if not os.path.exists(output_file):
-                print("DRC report file not created")
+                #print("DRC report file not created")
                 results["error"] = "DRC report file not created"
                 return results
             
@@ -74,14 +77,14 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
                 try:
                     drc_report = json.load(f)
                 except json.JSONDecodeError:
-                    print("Failed to parse DRC report JSON")
+                 #   print("Failed to parse DRC report JSON")
                     results["error"] = "Failed to parse DRC report JSON"
                     return results
             
             # Process the DRC report
             violations = drc_report.get("violations", [])
             violation_count = len(violations)
-            print(f"DRC completed with {violation_count} violations")
+            #print(f"DRC completed with {violation_count} violations")
             await ctx.report_progress(70, 100)
             ctx.info(f"DRC completed with {violation_count} violations")
             
@@ -107,7 +110,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
             return results
             
     except Exception as e:
-        print(f"Error in CLI DRC: {str(e)}", exc_info=True)
+       # print(f"Error in CLI DRC: {str(e)}", exc_info=True)
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results
 

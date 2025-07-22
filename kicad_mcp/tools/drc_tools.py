@@ -29,10 +29,10 @@ def register_drc_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with DRC history entries
         """
-        print(f"Getting DRC history for project: {project_path}")
+       # print(f"Getting DRC history for project: {project_path}")
         
         if not os.path.exists(project_path):
-            print(f"Project not found: {project_path}")
+          #  print(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
         # Get history entries
@@ -73,20 +73,20 @@ def register_drc_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with DRC results and statistics
         """
-        print(f"Running DRC check for project: {project_path}")
+       # print(f"Running DRC check for project: {project_path}")
         
         if not os.path.exists(project_path):
-            print(f"Project not found: {project_path}")
+           # print(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
         # Get PCB file from project
         files = get_project_files(project_path)
         if "pcb" not in files:
-            print("PCB file not found in project")
+           # print("PCB file not found in project")
             return {"success": False, "error": "PCB file not found in project"}
         
         pcb_file = files["pcb"]
-        print(f"Found PCB file: {pcb_file}")
+        #print(f"Found PCB file: {pcb_file}")
         
         # Report progress to user
         await ctx.report_progress(10, 100)
@@ -95,7 +95,7 @@ def register_drc_tools(mcp: FastMCP) -> None:
         # Run DRC using the appropriate approach
         drc_results = None
         
-        print("Using kicad-cli for DRC")
+        #print("Using kicad-cli for DRC")
         ctx.info("Using KiCad CLI for DRC check...")
         # logging.info(f"[DRC] Calling run_drc_via_cli for {pcb_file}") # <-- Remove log
         drc_results = await run_drc_via_cli(pcb_file, ctx)

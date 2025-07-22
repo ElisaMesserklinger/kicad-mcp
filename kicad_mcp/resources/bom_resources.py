@@ -7,11 +7,20 @@ import json
 import pandas as pd
 from typing import Dict, List, Any, Optional
 from mcp.server.fastmcp import FastMCP
+import logging
 
 from kicad_mcp.utils.file_utils import get_project_files
 
 # Import the helper functions from bom_tools.py to avoid code duplication
-from kicad_mcp.tools.bom_tools import parse_bom_file, analyze_bom_data
+from kicad_mcp.tools.bom_tools import parse_bom_file, analyze_bom_data 
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('kicad_mcp.log')    
+        ]
+)
 
 def register_bom_resources(mcp: FastMCP) -> None:
     """Register BOM-related resources with the MCP server.
@@ -30,7 +39,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted BOM report
         """
-        print(f"Generating BOM report for project: {project_path}")
+        (f"Generating BOM report for project: {project_path}")
         
         if not os.path.exists(project_path):
             return f"Project not found: {project_path}"
@@ -43,10 +52,10 @@ def register_bom_resources(mcp: FastMCP) -> None:
         for file_type, file_path in files.items():
             if "bom" in file_type.lower() or file_path.lower().endswith(".csv"):
                 bom_files[file_type] = file_path
-                print(f"Found potential BOM file: {file_path}")
+                logging.info(f"Found potential BOM file: {file_path}")
         
         if not bom_files:
-            print("No BOM files found for project")
+            logging.info("No BOM files found for project")
             return f"# BOM Report\n\nNo BOM files found for project: {os.path.basename(project_path)}.\n\nExport a BOM from KiCad first, or use the `export_bom_csv` tool to generate one."
         
         # Format as Markdown report
@@ -151,7 +160,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
                 report += "\n---\n\n"
             
             except Exception as e:
-                print(f"Error processing BOM file {file_path}: {str(e)}")
+                logging.error(f"Error processing BOM file {file_path}: {str(e)}")
                 report += f"## {file_type}\n\nError processing BOM file: {str(e)}\n\n"
         
         # Add export instructions
@@ -188,10 +197,9 @@ def register_bom_resources(mcp: FastMCP) -> None:
         for file_type, file_path in files.items():
             if "bom" in file_type.lower() or file_path.lower().endswith(".csv"):
                 bom_files[file_type] = file_path
-                print(f"Found potential BOM file: {file_path}")
+                logging.debug(f"Found potential BOM file: {file_path}")
 
         if not bom_files:
-            print("No BOM files found for project")
             return "No BOM files found for project. Export a BOM from KiCad first."
 
         # Use the first BOM file found
@@ -215,7 +223,6 @@ def register_bom_resources(mcp: FastMCP) -> None:
             return df.to_csv(index=False)
 
         except Exception as e:
-            print(f"Error generating CSV from BOM file: {str(e)}")
             return f"Error generating CSV from BOM file: {str(e)}"
 
     @mcp.resource("kicad://bom/{project_path}/json")
@@ -228,7 +235,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
         Returns:
             JSON-formatted BOM data
         """
-        print(f"Generating JSON BOM for project: {project_path}")
+        logging.debug(f"Generating JSON BOM for project: {project_path}")
 
         if not os.path.exists(project_path):
             return f"Project not found: {project_path}"
@@ -241,10 +248,10 @@ def register_bom_resources(mcp: FastMCP) -> None:
         for file_type, file_path in files.items():
             if "bom" in file_type.lower() or file_path.lower().endswith((".csv", ".json")):
                 bom_files[file_type] = file_path
-                print(f"Found potential BOM file: {file_path}")
+                logging.debug(f"Found potential BOM file: {file_path}")
 
         if not bom_files:
-            print("No BOM files found for project")
+            logging.debug("No BOM files found for project")
             return json.dumps({"error": "No BOM files found for project"}, indent=2)
 
         try:
@@ -277,5 +284,5 @@ def register_bom_resources(mcp: FastMCP) -> None:
             return json.dumps(result, indent=2, default=str)
 
         except Exception as e:
-            print(f"Error generating JSON from BOM file: {str(e)}")
+            logging.debug(f"Error generating JSON from BOM file: {str(e)}")
             return json.dumps({"error": str(e)}, indent=2)

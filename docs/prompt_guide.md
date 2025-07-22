@@ -35,3 +35,11 @@ The KiCad MCP Server includes several specialized prompt templates for common Ki
 | `component_sourcing` | Guidance for finding and sourcing components | You need to purchase components for your project |
 | `bom_comparison` | Compare BOMs between different design revisions | You want to understand changes between versions |
 
+### Prompts to Create Footprints and Sybols
+
+| Prompt Template | Description | Use When |
+|----------------|-------------|----------|
+| `analyzePdf_prompt` | Extracts Information from Datasheet | You want to get summary of datasheet |
+| `get_footprint_mod` | Claude generates .mod file and .pretty Folder as Library | You want to create Footprint for Footprint Editor |
+| `get_symbol_mod` | Claude generates .kicad_sym File | You want to create Symbol for Symbol Editor |
+| `save_prompt` | Claude saves the generated Files and adds to Library | You want to use the generated Files in kicad |
