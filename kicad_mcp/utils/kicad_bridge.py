@@ -19,6 +19,7 @@ class KiCadBridge:
     def _find_kicad_python(self) -> str:
         """Find KiCad Python executable."""
         paths = [
+            #Edit
             "C:/Program Files/KiCad/9.0/bin/python.exe",
             "C:/Users/messeel/AppData/Local/Programs/KiCad/9.0/bin/python.exe"
         ]

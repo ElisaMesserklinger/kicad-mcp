@@ -18,11 +18,6 @@ REQUIRED_PROPERTIES = {"Reference", "Value", "Footprint"}
 REQUIRED_TOP_LEVEL_KEYS = {"version", "generator", "generator_version"}
 
 
-
-# Remove all existing handlers
-for handler in logging.root.handlers[:]:
-    logging.root.removeHandler(handler)
-
 # Now configure your logging cleanly
 logging.basicConfig(
     level=logging.DEBUG,
@@ -160,7 +155,7 @@ def save_kicad_footprint(footprint_content: str, footprint_name: str, lib_name: 
         library_path: Path to the .pretty library folder
     """
 
-    #Edit if needed 
+    #Edit
     footprint_path = "c:/Users/messeel/KiCadProjects/KiCad/9.0/footprints"
 
     try:
@@ -508,3 +503,51 @@ def validate_kicad_footprint(footprint_content: str):
 
     except Exception as e:
         return {"success": False, "error": f"Parsing failed: {e}"}
+
+
+def accessFiles(content: str, filename: str, filetype: str):
+
+    if filetype == "symbol":
+        filename += ".kicad_sym"
+        path = "symbols"
+
+    
+    if filetype == "footprint":
+        filename += ".kicad_mod"
+        path = "footprints"
+
+
+    else:
+        return {"success": False, "error": "Invalid File Type"}
+
+    #Edit
+    basePathToFiles = f"c:/Users/messeel/KiCadProjects/KiCad/9.0/{path}"
+
+    full_path = os.path.join(basePathToFiles, filename)
+
+    if not os.path.exists(full_path):
+        logging.error(f"Error: File '{full_path}' does not exist.")
+        
+        if filetype == "footprints":
+            return {"success": False, "error": "Path does not exist", "Path": full_path, "Info": "Do not forget .pretty dir"}
+        
+        return {"success": False, "error": "Path does not exist", "Path": full_path}
+
+    
+    if not os.path.isfile(full_path):
+        logging.error(f"Error: Path '{full_path}' is not a file.")
+        return {"success": False, "error": "Path is not a File", "Path": full_path}
+    
+    try:
+        with open(full_path, 'w', encoding='utf-8') as file:
+            file.write(content)
+        logging.debug(f"File '{full_path}' successfully overwritten.")
+        return {"success": True, "changed File": full_path}
+
+    except Exception as e:
+        logging.debug(f"Failed to write to file: {e}")
+        return {"success": False, "error": e}
+
+
+
+

@@ -461,4 +461,6 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
         - The files and libraries must not only be saved to disk, but also **registered in the appropriate KiCad library tables** (`sym-lib-table` and `fp-lib-table`) if not already present.
         - No need to redefine save paths — assume that is handled in the existing environment.
         - Ensure no duplicate or conflicting entries are introduced into the environment.
+
+        **Before saving ensure that the created files are valid and validate the structure**
         """

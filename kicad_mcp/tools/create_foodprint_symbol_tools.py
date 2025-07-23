@@ -24,16 +24,32 @@ from kicad_mcp.config import KICAD_USER_DIR, ADDITIONAL_SEARCH_PATHS, DATASHEET_
 load_dotenv()
 
 
-def register_pdf_tools(mcp: FastMCP) -> None:
-    """Register PDF file management tools with the MCP server.
-    
+def register_footprint_symbol_tools(mcp: FastMCP) -> None:
+    """
+    Register a set of tools for handling KiCad library management and PDF handling 
+    with the FastMCP server instance.
+
+    These tools include:
+        - Listing PDF files from configured paths
+        - Saving KiCad footprints and symbols to libraries
+        - Adding those libraries to the global KiCad configuration
+        - Validating the structure of symbols and footprints
+
     Args:
-        mcp: The FastMCP server instance
+        mcp: The FastMCP server instance where tools are being registered.
     """
 
     @mcp.tool()
     def list_pdfs() -> List[Dict[str, Any]]:
-        """Find and list all PDF files in configured search directories."""
+        """
+        Tool: List all PDF files from configured search directories.
+
+        Searches for PDF files recursively in the paths defined in the project configuration.
+        
+        Returns:
+            A list of dictionaries with PDF metadata (e.g. file name, path).
+        """
+
         logging.info("Executing list_pdfs tool...")
         pdfs = find_pdfs()
         logging.info(f"list_pdfs tool returning {len(pdfs)} PDF files.")
@@ -42,7 +58,15 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def save_footprint_mod(mod_data: str, footprint_name: str, lib_name: str) -> Dict[str, Any]:
         """
-        Save the generated foodprint in Library
+        Tool: Save a footprint (.kicad_mod) file into a KiCad footprint library.
+
+        Args:
+            mod_data: The raw text content of the .kicad_mod file (S-expression format).
+            footprint_name: The name for the new footprint.
+            lib_name: The target KiCad library name where the footprint will be saved.
+
+        Returns:
+            A dictionary with a success flag: { "success": True } or { "success": False }
         """
 
         if not save_kicad_footprint(mod_data, footprint_name, lib_name):
@@ -54,7 +78,18 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def add_footprint_to_Lib(lib_path: str, lib_name: str, description: str) -> Dict[str, Any]:
         """
-        Save the generated foodprint in global Footprint Table
+        Tool: Add a footprint library to the global KiCad footprint table.
+
+        This registers the library so KiCad can access it globally.
+
+        Args:
+            lib_path: Path to the footprint library directory.
+            lib_name: Name of the library.
+            description: Description for the library entry.
+
+        Returns:
+            A dictionary with success flag and optionally the path:
+            e.g. { "success": True, "Path": lib_path }
         """
 
         type = "footprint"
@@ -67,7 +102,15 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def save_symbol(file_data: str, symbol_name: str, lib_name: str) -> Dict[str, Any]:
         """
-        Save the generated symbol in Library
+        Tool: Save a symbol (.kicad_sym) into a KiCad symbol library.
+
+        Args:
+            file_data: The full content of the symbol in KiCad S-expression format.
+            symbol_name: The name of the symbol to save.
+            lib_name: The name of the symbol library to save into.
+
+        Returns:
+            A dictionary with a success flag.
         """
 
         if not save_kicad_symbol(file_data, symbol_name, lib_name):
@@ -79,7 +122,17 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def add_symbol_to_Lib(lib_path: str, lib_name: str, description: str) -> Dict[str, Any]:
         """
-        Save the generated symbol in global symbol Table
+        Tool: Add a symbol library to the global KiCad symbol table.
+
+        Registers the symbol library so it can be used across projects.
+
+        Args:
+            lib_path: Path to the symbol library file (.kicad_sym).
+            lib_name: Name of the symbol library.
+            description: Description of the library.
+
+        Returns:
+            A dictionary with success flag and library path if successful.
         """
 
         type = "symbol"
@@ -95,7 +148,22 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def validate_symbol_structure(symbol_content: str) -> Dict[str, Any]:
         """
-        Check Structure of Symbol
+        Tool: Validate the structure of a KiCad symbol.
+
+        This function parses the symbol file content and checks it against KiCad standards.
+        Useful for catching formatting or semantic errors before saving.
+
+        Args:
+            symbol_content: The raw S-expression content of the symbol.
+
+        Returns:
+            A dictionary containing validation status and any errors or warnings.
+            Example:
+            {
+                "valid": True,
+                "errors": [],
+                "warnings": ["Missing footprint field"]
+            }
         """
         result = validate_kicad_symbol(symbol_content)
         return result
@@ -104,10 +172,48 @@ def register_pdf_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def validate_footprint_structure(footprint_content: str) -> Dict[str, Any]:
         """
-        Check Structure of Footprint
+        Tool: Validate the structure of a KiCad footprint.
+
+        Parses the footprint data and checks its structure for correctness.
+
+        Args:
+            footprint_content: The full content of a .kicad_mod file as a string.
+
+        Returns:
+            A dictionary with validation results.
+            Example:
+            {
+                "valid": True,
+                "errors": [],
+                "warnings": ["Text size too small"]
+            }
         """
         result = validate_kicad_footprint(footprint_content)
         return result
+    
+
+    @mcp.tool()
+    def edit_footprint_symbol_files(content: str, filepath: str, filetype: str) -> Dict[str, Any]:
+        """
+        Overwrites the content of a specific footprint or symbol file with new content.
+
+        Parameters:
+            content (str): The new content to write to the file.
+            filename (str): The relative path (from a predefined base directory) to the target file.
+
+        Returns:
+            Dict[str, Any]: A dictionary indicating the success or failure of the operation, 
+                            including a message and optionally an error detail.
+        """
+
+
+        result = accessFiles(content, filepath, filetype)
+        return result
+    
+
+    
+
+
 
 
     # not helpful because of Claudes Rate Limits

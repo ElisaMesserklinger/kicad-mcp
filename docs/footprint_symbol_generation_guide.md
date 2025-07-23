@@ -33,6 +33,6 @@ Listing all PDFs for the specified Path. Is similar to searching for Projects bu
 - A prompt can be used to provide instructions for generating the file, but saving the file and adding it to the library are handled by dedicated tools in `C:\Git\kicad-mcp\kicad_mcp\tools\create_foodprint_symbol_tools.py`
 
 
-## TODO: A lot of Paths are hardcoded so change before using 
+## TODO: Before using the code, search for all `#Edit` comments and update the paths below them to match your own environment.
 
 
