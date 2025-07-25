@@ -17,7 +17,7 @@ Listing all PDFs for the specified Path. Is similar to searching for Projects bu
 ### Prompt Extraction: analyzePdf_prompt:
 - In Claude Desktop click on the `+` and select the Server, then choose one of the Prompts
 - For this specific Prompt also add a PDF so Claude is able to analyze something
-- Prompts AI to analyze datasheet and extract dimensions, pin layout, pad sizes, orientation marks, mount type, assembly suggestions, IPC standards, etc.
+- Prompts the AI to extract relevant mechanical and electrical specifications from the datasheet, including pad dimensions, pin mapping, orientation indicators, mounting type, and IPC guidelines.
 - The Prompt can be changed and tailored in: `C:\Git\kicad-mcp\kicad_mcp\prompts\footprint_prompts.py`
 
 ### Footprint and Symbol Generation: get_footprint_mod, get_symbol_mod:
@@ -25,12 +25,40 @@ Listing all PDFs for the specified Path. Is similar to searching for Projects bu
 - Outputs only the .kicad_mod file content and the .kicad_sym content, following the specified template (courtyard, silkscreen, pads, orientation marks, etc.). 
 - The Prompts can be changed and tailored in: `C:\Git\kicad-mcp\kicad_mcp\prompts\footprint_prompts.py`
 
-###  Saving Footprint and Symbol: save_footprint_mod & add_footprint_to_Lib, save_symbol & add_symbol_to_Lib:
+### Validate Structure of the generated Files
+Before saving generated symbols and footprints into your KiCad libraries, the system performs validation to catch structural issues that would cause errors in importing the file in KiCad
+
+- `validate_kicad_symbol(symbolContent)` is performing following checks:
+    - Ensures the presence of required global keys (version, generator, generator_version)
+    - Searches for all (symbol ...) blocks, and processes them individually.
+    - Confirms that each symbol contains all required properties (Reference, Value, Footprint)
+    - Checks that each symbol includes at least one valid pin with (name, number, position, type )
+
+
+- `validate_kicad_footprint(footprint_content)` is performing following checks:
+- Ensures the file starts with a (footprint ...) block, which is required in all .kicad_mod files.
+- Verifies that the footprint includes at least one (pad ...) block — necessary for electrical connectivity in layout.
+
+### Saving Footprint and Symbol: save_footprint_mod & add_footprint_to_Lib, save_symbol & add_symbol_to_Lib:
 - Save .kicad_mod into .../footprints/MyCustomFootprints.pretty/
 - Update `fp-lib-table` automatically to register the new library
 - Appends or creates symbol library file in .../symbols/MyCustomSymbols.kicad_sym
 - Updates `sym-lib-table` so KiCad recognizes it
 - A prompt can be used to provide instructions for generating the file, but saving the file and adding it to the library are handled by dedicated tools in `C:\Git\kicad-mcp\kicad_mcp\tools\create_foodprint_symbol_tools.py`
+
+
+### Edit saved Files 
+- Writes generated KiCad **symbol** or **footprint** content to the appropriate file location.
+- Tool is useful for changing the generated Output after it was saved without creating new file again
+
+
+## Quickstart
+1. Open Claude Desktop, upload the PDF, and select `analyzePdf_prompt`.
+2. After analysis, use `get_footprint_mod` and `get_symbol_mod` to generate content add for claude what Packages are relevant.
+3. Validate using built-in checks that (tell claude to also validate Projects before saving).
+4. Save using `save_footprint_mod` and `save_symbol`.
+5. Automatically register using `add_footprint_to_Lib` and `add_symbol_to_Lib` (generated Files will be safed to global Footprint and Symbol Table).
+
 
 
 ## TODO: Before using the code, search for all `#Edit` comments and update the paths below them to match your own environment.

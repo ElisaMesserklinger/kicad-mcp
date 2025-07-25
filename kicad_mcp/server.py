@@ -25,9 +25,11 @@ from kicad_mcp.tools.drc_tools import register_drc_tools
 from kicad_mcp.tools.bom_tools import register_bom_tools
 from kicad_mcp.tools.netlist_tools import register_netlist_tools
 from kicad_mcp.tools.pattern_tools import register_pattern_tools
-#added own tool
+
+#added own tools
 from  kicad_mcp.tools.component_tool import register_component_tools
 from  kicad_mcp.tools.create_foodprint_symbol_tools import register_footprint_symbol_tools
+from kicad_mcp.tools.routing_tools import register_routing_tools
 
 
 
@@ -161,6 +163,7 @@ def create_server() -> FastMCP:
     #added own tools
     register_component_tools(mcp)
     register_footprint_symbol_tools(mcp)
+    register_routing_tools(mcp)
 
     
     # Register prompts

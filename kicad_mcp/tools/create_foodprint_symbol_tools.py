@@ -11,14 +11,11 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('mcp_sunprocess.log'),
-        logging.StreamHandler()
-
+        logging.FileHandler('kicad-mcp.log'),
     ]
 )
 
 from kicad_mcp.utils.create_foodprint_symbol_utils import *
-
 
 from kicad_mcp.config import KICAD_USER_DIR, ADDITIONAL_SEARCH_PATHS, DATASHEET_PATH
 load_dotenv()
@@ -69,10 +66,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
             A dictionary with a success flag: { "success": True } or { "success": False }
         """
 
-        if not save_kicad_footprint(mod_data, footprint_name, lib_name):
-            return {"success": False}
-        else:
-            return {"success": True}
+        return save_kicad_footprint(mod_data, footprint_name, lib_name)
 
 
     @mcp.tool()
@@ -93,11 +87,8 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
         """
 
         type = "footprint"
-
-        if not save_kicad_footprint_symbol_to_table(lib_name, description, type):
-            return {"success": False}
-        else:
-            return {"success": True, "Path": lib_path}
+        return save_kicad_footprint_symbol_to_table(lib_name, description, type)
+    
 
     @mcp.tool()
     def save_symbol(file_data: str, symbol_name: str, lib_name: str) -> Dict[str, Any]:
@@ -112,12 +103,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
         Returns:
             A dictionary with a success flag.
         """
-
-        if not save_kicad_symbol(file_data, symbol_name, lib_name):
-            return {"success": False}
-        else:
-            return {"success": True}
-        
+        return save_kicad_symbol(file_data, symbol_name, lib_name)
 
     @mcp.tool()
     def add_symbol_to_Lib(lib_path: str, lib_name: str, description: str) -> Dict[str, Any]:
@@ -136,12 +122,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
         """
 
         type = "symbol"
-
-        if not save_kicad_footprint_symbol_to_table(lib_name, description, type):
-            return {"success": False}
-        else:
-            return {"success": True, "Path": lib_path}
-        
+        return save_kicad_footprint_symbol_to_table(lib_name, description, type)
     
     
     
@@ -193,7 +174,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
     
 
     @mcp.tool()
-    def edit_footprint_symbol_files(content: str, filepath: str, filetype: str) -> Dict[str, Any]:
+    def edit_footprint_symbol_files(content: str, filename: str, filetype: str) -> Dict[str, Any]:
         """
         Overwrites the content of a specific footprint or symbol file with new content.
 
@@ -207,14 +188,24 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
         """
 
 
-        result = accessFiles(content, filepath, filetype)
+        result = accessFiles(content, filename, filetype)
         return result
     
 
-    
-
-
-
+    @mcp.tool()
+    def get_content(filename: str, filetype: str) -> Dict[str, Any]:
+        """
+        Retrieves the content of a specified file based on its filename and type.
+        
+        Parameters:
+            filename (str): The name of the file (without extension).
+            filetype (str): The type of the file, e.g., "symbol" or "footprint".
+            
+        Returns:
+            Dict[str, Any]: A dictionary containing the success status and either
+                            the file content or an error message.
+        """
+        return readFileContent(filename, filetype)
 
     # not helpful because of Claudes Rate Limits
     '''

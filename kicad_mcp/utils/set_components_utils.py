@@ -30,7 +30,6 @@ class ComponentInfo:
 class ComponentManager:
     """Utility class for KiCad component operations."""
 
-
     def __init__(self, board: Optional['pcbnew.BOARD'] = None):
         self.board = board
     

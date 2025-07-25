@@ -137,31 +137,41 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
     - Pad type: [SMD | Through-hole]
     - Pad shape: [Rectangular | Rounded | Circular | Oval]
     - Pin arrangement: [Single row | Dual row | Quad side | Grid array | Custom]
-    - Pin numbering direction: [Counter-clockwise | Clockwise | Sequential left to right]
     - Silkscreen clearance: [e.g., 0.2mm from pad edges]
     - Courtyard clearance: [e.g., 0.25mm from body outline]
     - **Pads should be horizontal.**
+    - Pad orientation: Horizontal (wide in X, narrow in Y)
+    - Pin numbering direction: From bottom left to top left and then top right to bottom right
+    - Pin 1: Located at bottom-left
+
+
 
     ---
 
     ### PHYSICAL ORIENTATION:
     - The PCB is **standing vertically**, like a module placed upright.
-    - The **long side of the package is horizontal (left to right)**, and the **short side is vertical (top to bottom)**.
-    - **Pin 1 is located in the top-left corner** of the physical footprint **when viewed from the top layer in KiCad PCB editor**.
-    - **Pin numbering:**
-    - Pins increase **top to bottom on the left side**
-    - Then continue **bottom to top on the right side** (U-shaped pattern)
-    - Pads are **aligned vertically on left and right sides**, **but oriented horizontally** (i.e., wide in X, short in Y)
+    - X-axis is horizontal, Y-axis is vertical.
+    - The long side of the body runs along the Y-axis
+    - Pads are aligned vertically (in Y), but oriented horizontally (i.e., wide in X, short in Y).
+    - **Pin 1 is located in the bottom-left corner** of the physical footprint **when viewed from the top layer in KiCad PCB editor**.
+    - Do NOT mirror or flip Y axis
+    - +Y is top, –Y is bottom
+    - +X is right, –X is left
 
+    - **Pin numbering:**
+    - Pins increase from **bottom to top on the left side**
+    - Then continue **top to bottom on the right side** (U-shaped pattern)
+
+    EXAMPLE PIN PLACEMENT (FOR REFERENCE ONLY, REMOVE IN OUTPUT):
+    (pad 1 smd rect (at -1.5 -1.5) (size 1.5 0.6))
+    (pad 2 smd rect (at -1.5 0.0) ...)
+    ...
+    (pad 5 smd rect (at 1.5 -1.5) ...) ; Top-right
     ---
 
     ### MECHANICAL & VISUAL FEATURES:
-    - The **top-left corner of the footprint must include a dot or notch** (silkscreen circle) to indicate Pin 1.
-    - **The PCB outline includes a chamfered cut corner** at the **top-left** (Edge.Cuts layer) to provide mechanical orientation.
-    - All pad numbering and geometry must reflect this placement logic.
-    - Pads must be placed symmetrically around the center and be evenly spaced by the defined pitch.
-    - Silkscreen and courtyard lines must maintain the specified clearances.
-
+    - The **bottom-left corner of the footprint must include a dot or notch** (silkscreen circle) to indicate Pin 1.
+    - **The PCB outline includes a chamfered cut corner** at the **bottom-left** (Edge.Cuts layer) to provide mechanical orientation.
     ---
 
     ### FILE FORMAT:
@@ -188,13 +198,6 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
     - `all pads`
 
     ---
-
-    ### PIN ORIENTATION RECAP:
-    - Pads must be **horizontally shaped** (wider in X).
-    - **Left side: Pin 1 at top, counting down (1 → N/2)**
-    - **Right side: continue from (N/2+1) at bottom, counting up**
-    - This layout matches typical dual-row vertical orientation (e.g., DIP, SOIC).
-    - The pin layout is **U-shaped around the vertical axis**.
 
     DO NOT ADD COMMENTS OR EXPLANATIONS IN THE FILE OUTPUT.
 
@@ -283,11 +286,12 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
         )
 
 
+            NO COMMENTS
 
             Placeholder	Description:
             PACKAGE_NAME	Name of the footprint (e.g., "SOIC-8_4.9x3.9mm_P1.27mm")
             <CRTYD_X> / <CRTYD_Y>	Half-width and half-height of courtyard
-            <BODY_X> / <BODY_Y>	Half-width and half-height of the body outline
+            <BODY_X> / <BODY_Y>	Half-width and half-height of the body outl ine
             <PAD_X> / <PAD_Y>	Width and height of the SMD pad
             <PIN_X>	Horizontal distance from center to pad row
             <PIN_Yn>	Vertical offset of each pad
@@ -303,6 +307,7 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
         return """
         You are a KiCad symbol generator. Generate ONLY the .kicad_sym file content with no explanations or additional text.
         Input specifications:
+
 
         Component: [COMPONENT_NAME]
         Package: [PACKAGE_TYPE]
@@ -342,9 +347,12 @@ def register_footprint_prompts(mcp: FastMCP) -> None:
         - Passive: Grouped logically or left/right as needed    
         - Maintain 1.27mm vertical spacing between pins
 
-        DO NOT ADD COMMENTS IN THE ACTUAL FILE
+        DO NOT ADD COMMENTS IN YOUR GENERATED FILE
 
         Here is just a example for a Format of a Library that contains multiple Symbols without any real values:
+
+        **PLEASE NOTE**:
+        - If you are addding symbols to an already existing library you can NOT add the header too, you have to start with (symbol )
 
         (kicad_symbol_lib
         (version [VERSION])

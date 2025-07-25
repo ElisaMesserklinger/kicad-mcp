@@ -153,7 +153,7 @@ def register_component_tools(mcp: FastMCP) -> None:
                 position=position,
                 library=library,
                 reference=reference,
-                value=value,
+                value=value,    
                 rotation=rotation,
                 layer=layer,
                 output_path=output_path

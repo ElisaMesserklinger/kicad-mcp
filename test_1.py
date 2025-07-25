@@ -1,43 +1,8 @@
-import subprocess
-import json
-import os
 from pathlib import Path
-from typing import Dict, Any, Optional
-import threading
-import logging
 
+current_dir = Path(__file__).parent
 
-logging.basicConfig(filename="C:/Git/kicad-mcp/mcp_sunprocess.log", level=logging.DEBUG)
-
-class KiCadBridge:
-    """Bridge between MCP server and KiCad Python environment."""
-    
-    def __init__(self):
-        self.kicad_python = self._find_kicad_python()
-        self.script_path = self._create_subprocess_script()
-    
-    def _find_kicad_python(self) -> str:
-        """Find KiCad Python executable."""
-        paths = [
-            #Edit
-            "C:/Program Files/KiCad/9.0/bin/python.exe",
-            "C:/Users/messeel/AppData/Local/Programs/KiCad/9.0/bin/python.exe"
-        ]
-        
-        for path in paths:
-            if os.path.exists(path):
-                return path
-        
-        raise FileNotFoundError("KiCad Python not found")
-    
-    def _create_subprocess_script(self) -> str:
-        """Create the subprocess script that uses your existing files."""
-        
-        # Get current directory
-        current_dir = Path(__file__).parent #import for later imports
-        
-        # Create subprocess script
-        script_content = '''
+script_content = '''
 
 import sys
 import json
@@ -258,112 +223,12 @@ if __name__ == "__main__":
         print(json.dumps({{"success": False, "error": str(e)}}))
 '''
 
-        # FORMAT the script with the actual project root path
-        project_root_path = str(current_dir).replace('\\', '/')
-        #formatted_script = script_content.format(project_root=project_root_path)
-        formatted_script = script_content.replace("{project_root}", project_root_path) 
-
-        # Save script
-        script_path = current_dir / "kicad_script_subprocess.py"
-        script_path.write_text(formatted_script)
-        return str(script_path)
-    
-
-    def _run_subprocess(self, method_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Run subprocess with method and parameters."""
-        logging.debug(f"Method: {method_name}")
-        logging.debug(f"Params: {params}")
-        
-        try:             
-            result = subprocess.run([
-                self.kicad_python, 
-                self.script_path, 
-                method_name, 
-                json.dumps(params)],
-
-                capture_output=True,
-                text=True,
-                stdin=subprocess.DEVNULL, 
-                timeout=60
-            )
-
-            logging.debug(f"Subprocess return code: {result.returncode}")
-            logging.debug(f"Subprocess stdout: {result.stdout}")
-            logging.debug(f"Subprocess stderr: {result.stderr}")
-            
-            if result.returncode != 0:
-                return {
-                    "success": False,
-                    "error": f"Subprocess failed with return code {result.returncode}",
-                    "stdout": result.stdout,
-                    "stderr": result.stderr
-                }
-            
-            # Parse the JSON output
-            try:
-                logging.debug("Try to parse JSON loads")
-                return json.loads(result.stdout)
-            except json.JSONDecodeError as e:
-                return {
-                    "success": False,
-                    "error": f"Failed to parse subprocess output: {str(e)}",
-                    "stdout": result.stdout,
-                    "stderr": result.stderr
-                }
-            
-        except subprocess.TimeoutExpired:
-            logging.error("Subprocess timeout")
-            return {"success": False, "error": "Command timeout after 60 seconds"}
-        except Exception as e:
-            logging.error(f"Subprocess error: {str(e)}")
-            return {"success": False, "error": f"Subprocess execution failed: {str(e)}"}
-        
-    
-
-    #functions that are called by tools
-    def load_board(self, project_path: str) -> Dict[str, Any]:
-        logging.debug("Called Load Board with Tool")
-        logging.debug("Project Path")
-        return self._run_subprocess("load_board", {"project_path": project_path})
-    
-    def place_component(self, project_path: str, component_id: str, position: Dict[str, Any],  library: str, 
-                       reference: Optional[str] = None, value: Optional[str] = None,
-                       rotation: float = 0, layer: str = "F.Cu", 
-                       output_path: Optional[str] = None) -> Dict[str, Any]:
-        """Place a single component (load -> place -> save)."""
-        return self._run_subprocess("place_component_full", {
-            "project_path": project_path,
-            "component_id": component_id,
-            "position": position,
-            "library": library,
-            "reference": reference,
-            "value": value,
-            "rotation": rotation,
-            "layer": layer,
-            "output_path": output_path
-        })
-    
-
-    def move_component(self, project_path: str, reference: str, position: Dict[str, Any], 
-                      rotation: Optional[float] = None) -> Dict[str, Any]:
-        """Move a component to a new position (load -> move -> save)."""
-        return self._run_subprocess("move_component", {
-            "project_path": project_path,
-            "reference": reference,
-            "position": position,
-            "rotation": rotation
-        })
-    
-    def get_net_pcb(self, project_path: str) -> Dict[str, Any]:
-
-        return self._run_subprocess("get_net_pcb", {
-            "project_path": project_path})
+    # FORMAT the script with the actual project root path
+project_root_path = str(current_dir).replace('\\', '/')
+#formatted_script = script_content.format(project_root=project_root_path)
+formatted_script = script_content.replace("{project_root}", project_root_path)
 
     
-
-    
-
-
-
-
-
+# Save script
+script_path = current_dir / "kicad_script_subprocess.py"    
+script_path.write_text(formatted_script)

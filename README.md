@@ -202,6 +202,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [Circuit Pattern Recognition](docs/pattern_guide.md)
 - [Footprint and Symbol generation](docs/footprint_symbol_generation_guide.md)
 - [Prompt Templates](docs/prompt_guide.md)
+- [Component Guide](docs/component_guide.md)
 
 ## Configuration
 
