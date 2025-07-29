@@ -5,6 +5,9 @@ import pathlib
 import anthropic 
 from pathlib import Path
 import sexpdata
+from PyPDF2 import PdfReader, PdfWriter
+
+
 
 
 from kicad_mcp.config import KICAD_USER_DIR, KICAD_APP_PATH, KICAD_EXTENSIONS, ADDITIONAL_SEARCH_PATHS, DATASHEET_PATH, KICAD_TABLE_PATH
@@ -239,17 +242,24 @@ def save_kicad_footprint_symbol_to_table(lib_name: str, description: str, type: 
 
     if type == "symbol":
         table = "sym-lib-table"
-        lib_path = os.path.join(kicad_version_dir, "symbols", f"{lib_name}.kicad_sym")
-    elif(type == "footprint"):
+        if not lib_name.endswith(".kicad_sym"):
+            lib_name += ".kicad_sym"
+        lib_path = Path(kicad_version_dir) / "symbols" / lib_name
+        path = lib_path.as_posix()
+
+    elif type == "footprint":
         table = "fp-lib-table"
-        lib_path = os.path.join(kicad_version_dir, "footprints", f"{lib_name}.pretty")
+        if not lib_name.endswith(".pretty"):
+            lib_name += ".pretty"
+        lib_path = Path(kicad_version_dir) / "footprints" / lib_name
+        path = lib_path.as_posix()
     else:
         return {
             'success': False,
             'message': f"Invalid type '{type}'. Must be 'symbol' or 'footprint'"
         }
 
-    logging.debug(lib_path)
+    logging.debug(path)
         
     #Path to global lib table: c:\Users\<User>\%AppData%\kicad\9.0\fp-lib-table
     lib_table_path = os.path.normpath(os.path.join(KICAD_TABLE_PATH, kicad_version, table))
@@ -272,7 +282,7 @@ def save_kicad_footprint_symbol_to_table(lib_name: str, description: str, type: 
         }
     
     #create new library entry 
-    lib_entry = f'''(lib (name "{lib_name}") (type KiCad) (uri "{lib_path}") (options "") (descr "{description}"))\n'''
+    lib_entry = f'''(lib (name "{lib_name}") (type KiCad) (uri "{path}") (options "") (descr "{description}"))\n'''
 
     if any(f'(name "{lib_name}")' in line for line in lines):
         logging.debug("Library already exists")
@@ -628,3 +638,65 @@ def readFileContent(filename: str, filetype: str):
         logging.error(f"Failed to access file '{full_path}': {e}")
         return {"success": False, "error": str(e)}
 
+
+
+def split_pdf(input_pdf_path: str, output_dir: str, pages_per_split: int, dirname: str):
+    try:
+        # Check that the input file exists
+        if not os.path.isfile(input_pdf_path):
+            return {"success": False, "error": f"Input PDF not found: {input_pdf_path}"}
+
+        # Validate pages_per_split
+        if pages_per_split <= 0:
+            return {"success": False, "error": "pages_per_split must be greater than zero."}
+
+        # Try loading the PDF
+        try:
+            reader = PdfReader(input_pdf_path)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+        total_pages = len(reader.pages)
+
+        path = Path(DATASHEET_PATH) / output_dir 
+
+        # Create output directory if it doesn't exist
+        try:
+            os.makedirs(path, exist_ok=True)
+        except PermissionError:
+            return {"success": False, "error": f"Permission denied: Cannot create directory '{path}'"}
+
+        created_files = []
+
+        # Split into chunks
+        for start_page in range(0, total_pages, pages_per_split):
+            writer = PdfWriter()
+            end_page = min(start_page + pages_per_split, total_pages)
+
+            for i in range(start_page, end_page):
+                writer.add_page(reader.pages[i])
+
+
+            filename = f"{dirname}_{start_page + 1}_to_{end_page}.pdf"
+            output_path = path / filename
+            try:
+                with open(output_path, "wb") as output_file:
+                    writer.write(output_file)
+                created_files.append(str(output_path))
+            except Exception as e:
+                return {"success": False, "error": f"Failed to write split PDF '{output_path}': {e}"}
+            
+        return {
+            "success": True, 
+            "output_paths": created_files,
+            "total_files": len(created_files),
+            "total_pages": total_pages
+        }
+
+    except Exception as err:
+        return {"success": False, "error": f"Error: {err}"}
+    
+
+
+
+    

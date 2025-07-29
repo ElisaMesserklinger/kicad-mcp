@@ -301,6 +301,11 @@ def test_getting_netlist():
 
     print(netlist)
     
+def test_trace_routes():
+    kicad = KiCadBridge()
+
+    route_status = kicad.track_pcb_routes("C:/Users/messeel/KiCadProjects/KiCad/hw_PB238_uiws_mainboard/PB238_uiws_mainboard.kicad_pcb", {"x": 10.0, "y": 15.0}, {"x": 25.0, "y": 30.0}, "F.Cu", 0.25, "/power/LMR_VCC")
+    print(route_status)
 
 
 #print(validate_kicad_symbol(test_symbol_1))
@@ -330,4 +335,7 @@ def test_getting_netlist():
 
 #print(test_saving_symbol())
 
-test_getting_netlist()
+
+
+
+test_trace_routes()

@@ -31,15 +31,14 @@ from  kicad_mcp.tools.component_tool import register_component_tools
 from  kicad_mcp.tools.create_foodprint_symbol_tools import register_footprint_symbol_tools
 from kicad_mcp.tools.routing_tools import register_routing_tools
 
-
-
-
 # Import prompt handlers
 from kicad_mcp.prompts.templates import register_prompts
 from kicad_mcp.prompts.drc_prompt import register_drc_prompts
 from kicad_mcp.prompts.bom_prompts import register_bom_prompts
 from kicad_mcp.prompts.pattern_prompts import register_pattern_prompts
 from kicad_mcp.prompts.footprint_prompts import register_footprint_prompts
+from kicad_mcp.prompts.routing_prompts import register_routing_prompts
+
 
 
 # Import context management
@@ -173,6 +172,7 @@ def create_server() -> FastMCP:
     register_bom_prompts(mcp)
     register_pattern_prompts(mcp)
     register_footprint_prompts(mcp)
+    register_routing_prompts(mcp)
 
     # Register signal handlers and cleanup
     register_signal_handlers(mcp)

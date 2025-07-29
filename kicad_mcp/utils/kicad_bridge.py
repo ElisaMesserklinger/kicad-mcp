@@ -250,6 +250,88 @@ if __name__ == "__main__":
                 print(json.dumps(error_result))
                 sys.exit(1)
 
+        elif method_name == "track_pcb_routes":
+            project_path = params["project_path"]
+        
+            #load current board
+            logging.debug("DEBUG: Loading board for move operation...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            #Set track 
+            all_results = []  # To hold results of each route
+            try:
+                routes = params["route"]
+                logging.debug("Routes:")
+                logging.debug(routes)
+                for route in routes:
+                    start = route.get("start")
+                    end = route.get("end")
+                    layer = route.get("layer")
+                    width = route.get("width")
+                    net = route.get("net")
+
+                    # Validate the route parameters
+                    if not all([start, end, layer, width, net]):
+                        error_result = {
+                            "success": False,
+                            "message": "Missing required route parameters",
+                            "route": route
+                        }
+                        logging.error(f"ERROR: Missing required parameters for route: {route}")
+                        all_results.append(error_result)
+                        continue
+
+                    # Trace track for this route
+                    trace_track = board_manager.trace_routes(start=start, end=end, layer=layer, width=width, net=net)
+
+                    if not trace_track["success"]:
+                        logging.error(f"ERROR: Failed to route: {trace_track.get('message', 'Unknown error')}")
+                        all_results.append(trace_track)
+                        continue
+
+                    all_results.append(trace_track)
+
+
+                # Step 3: Save board
+                logging.debug("DEBUG: Saving board...")
+                save_result = board_manager.save_board()
+                
+                if not save_result["success"]:
+                    print(json.dumps(save_result))
+                    sys.exit(1)
+
+                logging.debug("DEBUG: Board saved successfully")
+
+                result = {
+                    "success": True,
+                    "message": "Routing operation completed",
+                    "routes": all_results,  # Include the results for each route
+                    "save_info": save_result
+                }
+
+                logging.debug(json.dumps(result))
+                print(json.dumps(result))
+
+            except Exception as e:
+                # Handle unexpected errors that may occur during routing or saving
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during routing",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during routing: {str(e)}")
+                all_results.append(error_result)
+                logging.debug(json.dumps(result))
+                print(json.dumps(result))
+        
+
         
         else:
             print(json.dumps({{"success": False, "error": f"Unknown method: {{method_name}}"}}))
@@ -358,6 +440,13 @@ if __name__ == "__main__":
 
         return self._run_subprocess("get_net_pcb", {
             "project_path": project_path})
+    
+    def track_pcb_routes(self, project_path: str, route: Dict[str, Any]) -> Dict[str, Any]:
+       return self._run_subprocess("track_pcb_routes", {
+        "project_path": project_path,
+        "route": route  
+    })
+
 
     
 

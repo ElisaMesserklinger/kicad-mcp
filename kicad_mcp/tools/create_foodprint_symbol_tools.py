@@ -206,6 +206,23 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
                             the file content or an error message.
         """
         return readFileContent(filename, filetype)
+    
+    @mcp.tool()
+    def make_pdf_smaller(input_pdf_path: str, output_dir: str, pages_per_split: int, filename: str) -> Dict[str, Any]:
+        """
+        Split a PDF file into smaller chunks.
+        
+        Args:
+            input_pdf_path (str): Path to the input PDF file
+            output_dir (str): Directory where split files will be saved
+            pages_per_split (int): Number of pages per split file
+            
+        Returns:
+            Dict
+        """
+        return split_pdf(input_pdf_path, output_dir, pages_per_split, filename)
+
+
 
     # not helpful because of Claudes Rate Limits
     '''
@@ -225,3 +242,4 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
 
         return
     '''
+
