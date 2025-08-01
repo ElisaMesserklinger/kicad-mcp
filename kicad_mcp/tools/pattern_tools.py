@@ -173,17 +173,51 @@ def register_pattern_tools(mcp: FastMCP) -> None:
                 ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
-            schematic_path = files["schematic"]
-            ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
-            
-            # Identify patterns in the schematic
-            result = await identify_circuit_patterns(schematic_path, ctx)
-            
-            # Add project path to result
-            if "success" in result and result["success"]:
-                result["project_path"] = project_path
-            
-            return result
+            schematic_paths = files["schematic"]
+            if isinstance(schematic_paths, str):
+                schematic_paths = [schematic_paths]
+
+            all_patterns = []
+            failed_files = []
+
+            await ctx.report_progress(20, 100)
+            ctx.info(f"Analyzing circuit patterns from {len(schematic_paths)} schematic file(s)...")
+
+            for schematic_path in schematic_paths:
+                ctx.info(f"Processing: {os.path.basename(schematic_path)}")
+
+                try:
+                    result = await identify_circuit_patterns(schematic_path, ctx)
+
+                    if result.get("success"):
+                        pattern_groups = result.get("identified_patterns", {})
+                        for category, patterns in pattern_groups.items():
+                            for pattern in patterns:
+                                pattern["category"] = category
+                                pattern["source_schematic"] = os.path.basename(schematic_path)
+                                all_patterns.append(pattern)
+                    else:
+                        failed_files.append({
+                            "schematic": os.path.basename(schematic_path),
+                            "error": result.get("error", "Unknown error")
+                        })
+
+                except Exception as sub_e:
+                    failed_files.append({
+                        "schematic": os.path.basename(schematic_path),
+                        "error": str(sub_e)
+                    })
+
+            await ctx.report_progress(100, 100)
+
+            return {
+                "success": True,
+                "project_path": project_path,
+                "patterns": all_patterns,
+                "failed_schematics": failed_files,
+                "total_patterns_found": len(all_patterns)
+            }
+
             
         except Exception as e:
             ctx.info(f"Error analyzing project circuit patterns: {str(e)}")

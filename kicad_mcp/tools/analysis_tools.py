@@ -48,3 +48,7 @@ def register_analysis_tools(mcp: FastMCP) -> None:
             "files_found": list(files.keys())
         }
 
+
+    @mcp.tool()
+    def get_projectInfo(project_path: str) -> Dict[str, Any]:
+

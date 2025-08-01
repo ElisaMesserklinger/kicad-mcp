@@ -118,21 +118,49 @@ def register_netlist_tools(mcp: FastMCP) -> None:
                 ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
-            schematic_path = files["schematic"]
-            #print(f"Found schematic file: {schematic_path}")
-            ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
+            schematic_paths = files["schematic"]
+
+            if isinstance(schematic_paths, str):
+                schematic_paths = [schematic_paths]
             
+            all_components = {}
+            all_nets = {}
+
             # Extract netlist
             await ctx.report_progress(20, 100)
-            
-            # Call the schematic netlist extraction
-            result = await extract_schematic_netlist(schematic_path, ctx)
-            
-            # Add project path to result
-            if "success" in result and result["success"]:
-                result["project_path"] = project_path
-            
-            return result
+
+            await ctx.report_progress(20, 100)
+            ctx.info(f"Extracting netlist from {len(schematic_paths)} schematic file(s)...")
+
+            for schematic_path in schematic_paths:
+                ctx.info(f"Processing: {os.path.basename(schematic_path)}")
+                result = await extract_schematic_netlist(schematic_path, ctx)
+
+                if not result.get("success"):
+                    ctx.info(f"Error extracting netlist from {schematic_path}: {result.get('error', 'Unknown error')}")
+                    return {"success": False, "error": f"Failed to extract netlist from {schematic_path}: {result.get('error')}"}
+
+                for ref, comp in result.get("components", {}).items():
+                    if ref not in all_components:
+                        all_components[ref] = comp
+                    else:
+                        ctx.info(f"Duplicate component reference '{ref}' found in multiple schematics. Using first occurrence.")
+
+                # Merge nets
+                for net_name, pins in result.get("nets", {}).items():
+                    if net_name not in all_nets:
+                        all_nets[net_name] = pins
+                    else:
+                        all_nets[net_name].extend(pins)
+
+            await ctx.report_progress(100, 100)
+
+            return {
+                "success": True,
+                "project_path": project_path,
+                "components": all_components,
+                "nets": all_nets
+            }
             
         except Exception as e:
            # print(f"Error extracting project netlist: {str(e)}")
@@ -284,123 +312,146 @@ def register_netlist_tools(mcp: FastMCP) -> None:
                 ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
-            schematic_path = files["schematic"]
+            schematic_paths = files["schematic"]
             #print(f"Found schematic file: {schematic_path}")
-            ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
+            #ctx.info(f"Found schematic file: {os.path.basename(schematic_paths)}")
             
+            if isinstance(schematic_paths, str):
+                schematic_paths = [schematic_paths]
+
+            found = False
+            result = {}
+
+        
             # Extract netlist
             await ctx.report_progress(30, 100)
             ctx.info(f"Extracting netlist to find connections for {component_ref}...")
             
-            netlist_data = extract_netlist(schematic_path)
+            netlist_data = []
+            for schematic_path in schematic_paths:
+                netlist = extract_netlist(schematic_path)
             
-            if "error" in netlist_data:
-                #print(f"Failed to extract netlist: {netlist_data['error']}")
-                ctx.info(f"Failed to extract netlist: {netlist_data['error']}")
-                return {"success": False, "error": netlist_data['error']}
+                if "error" in netlist:
+                    #print(f"Failed to extract netlist: {netlist_data['error']}")
+                    ctx.info(f"Failed to extract netlist: {netlist['error']}")
+                    return {"success": False, "error": netlist['error']}
             
-            # Check if component exists in the netlist
-            components = netlist_data.get("components", {})
-            if component_ref not in components:
-              #  print(f"Component {component_ref} not found in schematic")
-                ctx.info(f"Component {component_ref} not found in schematic")
-                return {
-                    "success": False, 
-                    "error": f"Component {component_ref} not found in schematic",
-                    "available_components": list(components.keys())
-                }
+                # Check if component exists in the netlist
+                components = netlist.get("components", {})
+                if component_ref not in components:
+                    continue
             
-            # Get component information
-            component_info = components[component_ref]
+                # Get component information
+                found = True
+                component_info = components[component_ref]
+                nets = netlist.get("nets", {})
+                connections = []
+                connected_nets = []
+                
+                # Find connections
+                await ctx.report_progress(50, 100)
+                ctx.info("Finding connections...")
             
-            # Find connections
-            await ctx.report_progress(50, 100)
-            ctx.info("Finding connections...")
+    
             
-            nets = netlist_data.get("nets", {})
-            connections = []
-            connected_nets = []
-            
-            for net_name, pins in nets.items():
-                # Check if any pin belongs to our component
-                component_pins = []
-                for pin in pins:
-                    if pin.get('component') == component_ref:
-                        component_pins.append(pin)
+                for net_name, pins in nets.items():
+                    # Check if any pin belongs to our component
+                    component_pins = []
+                    for pin in pins:
+                        if pin.get('component') == component_ref:
+                            component_pins.append(pin)
                         
-                if component_pins:
-                    # This net has connections to our component
-                    net_connections = []
-                    
-                    for pin in component_pins:
-                        pin_num = pin.get('pin', 'Unknown')
-                        # Find other components connected to this pin
-                        connected_components = []
+                    if component_pins:
+                        # This net has connections to our component
+                        net_connections = []
                         
-                        for other_pin in pins:
-                            other_comp = other_pin.get('component')
-                            if other_comp and other_comp != component_ref:
-                                connected_components.append({
-                                    "component": other_comp,
+                        for pin in component_pins:
+                            pin_num = pin.get('pin', 'Unknown')
+                            # Find other components connected to this pin
+                            connected_components = [
+                                {
+                                    "component": other_pin.get('component'),
                                     "pin": other_pin.get('pin', 'Unknown')
-                                })
+                                }
+                                for other_pin in pins
+                                if other_pin.get('component') and other_pin.get('component') != component_ref
+                            ]
+                            
+                            net_connections.append({
+                                "pin": pin_num,
+                                "net": net_name,
+                                "connected_to": connected_components
+                            })
                         
-                        net_connections.append({
-                            "pin": pin_num,
-                            "net": net_name,
-                            "connected_to": connected_components
-                        })
-                    
-                    connections.extend(net_connections)
-                    connected_nets.append(net_name)
+                        connections.extend(net_connections)
+                        connected_nets.append(net_name)
             
-            # Analyze the connections
-            await ctx.report_progress(70, 100)
-            ctx.info("Analyzing connections...")
+                # Analyze the connections
+                await ctx.report_progress(70, 100)
+                ctx.info("Analyzing connections...")
             
-            # Categorize connections by pin function (if possible)
-            pin_functions = {}
-            if "pins" in component_info:
-                for pin in component_info["pins"]:
-                    pin_num = pin.get('num')
-                    pin_name = pin.get('name', '')
-                    
-                    # Try to categorize based on pin name
-                    pin_type = "unknown"
-                    
-                    if any(power_term in pin_name.upper() for power_term in ["VCC", "VDD", "VEE", "VSS", "GND", "PWR", "POWER"]):
-                        pin_type = "power"
-                    elif any(io_term in pin_name.upper() for io_term in ["IO", "I/O", "GPIO"]):
-                        pin_type = "io"
-                    elif any(input_term in pin_name.upper() for input_term in ["IN", "INPUT"]):
-                        pin_type = "input"
-                    elif any(output_term in pin_name.upper() for output_term in ["OUT", "OUTPUT"]):
-                        pin_type = "output"
-                    
-                    pin_functions[pin_num] = {
-                        "name": pin_name,
-                        "type": pin_type
-                    }
-            
-            # Build result
-            result = {
-                "success": True,
-                "project_path": project_path,
-                "schematic_path": schematic_path,
-                "component": component_ref,
-                "component_info": component_info,
-                "connections": connections,
-                "connected_nets": connected_nets,
-                "pin_functions": pin_functions,
-                "total_connections": len(connections)
-            }
-            
-            await ctx.report_progress(100, 100)
-            ctx.info(f"Found {len(connections)} connections for component {component_ref}")
-            
+                # Categorize connections by pin function (if possible)
+                pin_functions = {}
+                if "pins" in component_info:
+                    for pin in component_info["pins"]:
+                        pin_num = pin.get('num')
+                        pin_name = pin.get('name', '')
+                        
+                        # Try to categorize based on pin name
+                        pin_type = "unknown"
+                        
+                        if any(power_term in pin_name.upper() for power_term in ["VCC", "VDD", "VEE", "VSS", "GND", "PWR", "POWER"]):
+                            pin_type = "power"
+                        elif any(io_term in pin_name.upper() for io_term in ["IO", "I/O", "GPIO"]):
+                            pin_type = "io"
+                        elif any(input_term in pin_name.upper() for input_term in ["IN", "INPUT"]):
+                            pin_type = "input"
+                        elif any(output_term in pin_name.upper() for output_term in ["OUT", "OUTPUT"]):
+                            pin_type = "output"
+                        
+                        pin_functions[pin_num] = {
+                            "name": pin_name,
+                            "type": pin_type
+                        }
+                
+                # Build result
+                result = {
+                    "success": True,
+                    "project_path": project_path,
+                    "schematic_path": schematic_path,
+                    "component": component_ref,
+                    "component_info": component_info,
+                    "connections": connections,
+                    "connected_nets": connected_nets,
+                    "pin_functions": pin_functions,
+                    "total_connections": len(connections)
+                }
+                
+                await ctx.report_progress(100, 100)
+                ctx.info(f"Found {len(connections)} connections for component {component_ref}")
+                
+                break
+
+            if not found:
+                # Collect all available components to assist debugging
+                all_components = []
+                for schematic_path in schematic_paths:
+                    netlist_data = extract_netlist(schematic_path)
+                    all_components.extend(netlist_data.get("components", {}).keys())
+
+                return {
+                    "success": False,
+                    "error": f"Component {component_ref} not found in any schematic",
+                    "available_components": sorted(set(all_components))
+                }
+
             return result
-            
+
         except Exception as e:
            # print(f"Error finding component connections: {str(e)}", exc_info=True)
             ctx.info(f"Error finding component connections: {str(e)}")
             return {"success": False, "error": str(e)}
+
+
+
+

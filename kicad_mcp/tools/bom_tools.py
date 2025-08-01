@@ -56,10 +56,22 @@ def register_bom_tools(mcp: FastMCP) -> None:
         
         # Look for BOM files
         bom_files = {}
+         # Report progress
+        await ctx.report_progress(10, 100)
+        ctx.info(f"Looking for BOM files related to {os.path.basename(project_path)}")
+        
+        # Get all project files
+        files = get_project_files(project_path)
+        
+        # Look for BOM files
+        bom_files = {}
         for file_type, file_path in files.items():
-            if "bom" in file_type.lower() or file_path.lower().endswith(".csv"):
-                bom_files[file_type] = file_path
-                logging.debug(f"Found potential BOM file: {file_path}")
+            paths = file_path if isinstance(file_path, list) else [file_path]
+            for path in paths:
+                if "bom" in file_type.lower() or path.lower().endswith(".csv"):
+                    bom_files[file_type] = path
+                    logging.debug(f"Found potential BOM file: {path}")
+        
         
         if not bom_files:
             logging.debug("No BOM files found for project")

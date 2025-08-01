@@ -196,33 +196,51 @@ class SchematicParser:
                 'y': float(pos_match.group(2)),
                 'angle': float(pos_match.group(3).strip() if pos_match.group(3) else 0)
             }
-        
-        # Extract pins
-        pins = []
-        pin_matches = re.finditer(r'\(pin\s+\(num\s+"([^"]+)"\)\s+\(name\s+"([^"]+)"\)', symbol_expr)
-        for match in pin_matches:
-            pin_num = match.group(1)
-            pin_name = match.group(2)
-            pins.append({
+
+
+        # Extract symbol definition pins (with names)
+        symbol_pins = []
+        symbol_pin_matches = re.finditer(r'\(pin\s+\w+\s+\w+.*?\(name\s+"([^"]+)".*?\)\s*\(number\s+"([^"]+)"', symbol_expr, re.DOTALL)
+        for match in symbol_pin_matches:
+            pin_name = match.group(1)
+            pin_num = match.group(2)
+            symbol_pins.append({
                 'num': pin_num,
                 'name': pin_name
             })
         
-        if pins:
-            component['pins'] = pins
+        # Extract instance pins (with UUIDs)
+        instance_pins = []
+        instance_pin_matches = re.finditer(r'\(pin\s+"([^"]+)"\s*\(uuid\s+"([^"]+)"\)', symbol_expr, re.DOTALL)
+        for match in instance_pin_matches:
+            pin_num = match.group(1)
+            pin_uuid = match.group(2)
+            instance_pins.append({
+                'num': pin_num,
+                'uuid': pin_uuid
+            })
+    
+        # Add both pin lists to component
+        if symbol_pins:
+            component['symbol_pins'] = symbol_pins
+        
+        if instance_pins:
+            component['instance_pins'] = instance_pins
         
         return component
-
+        
+        
     def _extract_wires(self) -> None:
         """Extract wire information from schematic."""
         #print("Extracting wires")
         
         # Extract all wire expressions
-        wires = self._extract_s_expressions(r'\(wire\s+')
+        wires = self._extract_s_expressions('\(wire\s+')
         
         for wire in wires:
             # Extract the wire coordinates
-            pts_match = re.search(r'\(pts\s+\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\s+\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\)', wire)
+            pts_match = re.search(r'\(pts\s*\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\s*\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)', wire, re.DOTALL)
+
             if pts_match:
                 self.wires.append({
                     'start': {
@@ -246,7 +264,7 @@ class SchematicParser:
         
         for junction in junctions:
             # Extract the junction coordinates
-            xy_match = re.search(r'\(junction\s+\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\)', junction)
+            xy_match = re.search(r'\(junction.*?\(at\s+([\d\.-]+)\s+([\d\.-]+)\)', junction, re.DOTALL)
             if xy_match:
                 self.junctions.append({
                     'x': float(xy_match.group(1)),
@@ -391,6 +409,7 @@ class SchematicParser:
 
 
 def extract_netlist(schematic_path: str) -> Dict[str, Any]:
+    
     """Extract netlist information from a KiCad schematic file.
     
     Args:

@@ -30,10 +30,21 @@ def get_project_files(project_path: str) -> Dict[str, str]:
             # We already have the project file
             files[file_type] = project_path
             continue
-            
-        file_path = os.path.join(project_dir, f"{project_name}{extension}")
-        if os.path.exists(file_path):
-            files[file_type] = file_path
+
+        if file_type == "schematic":
+            # When project has subsheets
+            matching = [
+                os.path.join(project_dir, f)
+                for f in os.listdir(project_dir)
+                if f.endswith(extension)
+            ]
+            if matching:
+                files[file_type] = matching
+
+        else:
+            file_path = os.path.join(project_dir, f"{project_name}{extension}")
+            if os.path.exists(file_path):
+                files[file_type] = file_path
     
     # Check for data files
     for ext in DATA_EXTENSIONS:

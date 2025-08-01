@@ -27,7 +27,7 @@ The netlist extraction functionality allows you to:
 
 To extract a netlist from a schematic:
 
-```
+``` 
 Extract the netlist from my schematic at /path/to/project.kicad_sch
 ```
 
