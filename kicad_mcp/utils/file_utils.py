@@ -75,3 +75,4 @@ def load_project_json(project_path: str) -> Optional[Dict[str, Any]]:
             return json.load(f)
     except Exception:
         return None
+    

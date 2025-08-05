@@ -14,10 +14,11 @@ if system == "Darwin":  # macOS
     KICAD_APP_PATH = "/Applications/KiCad/KiCad.app"
 elif system == "Windows":
     #Edit
-    KICAD_USER_DIR = os.path.expanduser("C:/Users/messeel/KiCadProjects/KiCad")
-    KICAD_TABLE_PATH = os.path.expanduser("c:/Users/messeel/AppData/Roaming/kicad/")
-    DATASHEET_PATH = os.path.expanduser("C:/Users/messeel/KiCadProjects")
-    KICAD_APP_PATH = "C:/Users/messeel/AppData/Local/Programs/KiCad/9.0"
+    KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
+    KICAD_APP_PATH = r"C:\Program Files\KiCad"
+    KICAD_TABLE_PATH = os.path.join(os.getenv('APPDATA'), 'kicad')
+    DATASHEET_PATH = os.path.join(os.getenv('USERPROFILE'), 'KiCadProjects')
+    
 elif system == "Linux":
     KICAD_USER_DIR = os.path.expanduser("~/KiCad")
     KICAD_APP_PATH = "/usr/share/kicad"

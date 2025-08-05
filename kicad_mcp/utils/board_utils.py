@@ -7,8 +7,6 @@ import logging
 from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 
-logging.basicConfig(filename="C:\Git\kicad-mcp\mcp_sunprocess.log", level=logging.DEBUG)
-
 try:
     import pcbnew
     PCBNEW_AVAILABLE = True
@@ -33,28 +31,19 @@ class BoardManager:
         Returns:
             Dict with load result and board info
         """
+        
 
         logging.debug(project_path)
-        
-        # Convert .kicad_pro to .kicad_pcb
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-        else:
-            pcb_path = project_path
-        
-
-        logging.debug(pcb_path)
-        if not os.path.exists(pcb_path):
+        if not os.path.exists(project_path):
             return {
                 "success": False,
-                "message": f"PCB file not found: {pcb_path}"
+                "message": f"PCB file not found: {project_path}"
             }
         
         try:
-            
 
             try:
-                self.board = pcbnew.LoadBoard(pcb_path)
+                self.board = pcbnew.LoadBoard(project_path)
             except Exception as e:
                 return {"success": False, "error": f"Failed to load board: {str(e)}"}
 
@@ -62,9 +51,9 @@ class BoardManager:
             
             return {
                 "success": True,
-                "message": f"Board loaded successfully: {pcb_path}",
+                "message": f"Board loaded successfully: {project_path}",
                 "board_info": {
-                    "pcb_path": pcb_path,
+                    "pcb_path": project_path,
                 }
             }
             
@@ -125,8 +114,6 @@ class BoardManager:
 
         try:
             net_info = {}
-            pad_info = []
-            unrouted_pad_count = 0
 
         
             # Get all nets from the board
@@ -137,52 +124,10 @@ class BoardManager:
                 if net:
                     net_name = net.GetNetname()
                     net_info[net_name] = net_code
-
-            # Get all pads from all footprints
-            for footprint in self.board.GetFootprints():
-                footprint_ref = footprint.GetReference()
-                footprint_value = footprint.GetValue()
-                footprint_pos = footprint.GetPosition()
-                
-                for pad in footprint.Pads():
-                    pad_data = {
-                        "footprint_reference": footprint_ref,
-                        "footprint_value": footprint_value,
-                        "footprint_position": {
-                            "x": footprint_pos.x / 1000000.0,  # Convert from nanometers to mm
-                            "y": footprint_pos.y / 1000000.0
-                        },
-                        "pad_number": pad.GetNumber(),
-                        "pad_name": pad.GetPadName(),
-                        "net_name": pad.GetNetname(),
-                        "net_code": pad.GetNetCode(),
-                        "position": {
-                            "x": pad.GetPosition().x / 1000000.0, 
-                            "y": pad.GetPosition().y / 1000000.0
-                        },
-                        "size": {
-                            "x": pad.GetSize().x / 1000000.0, 
-                            "y": pad.GetSize().y / 1000000.0
-                        },
-                        "shape": pad.GetShape(),
-                        #"layer_set": pad.GetLayerSet().Seq(),
-                        "drill_size": {
-                            "x": pad.GetDrillSize().x / 1000000.0,  
-                            "y": pad.GetDrillSize().y / 1000000.0
-                        } if pad.GetDrillSize().x > 0 else None,
-                        "pad_type": pad.GetAttribute()  # PAD_ATTRIB (e.g., THT, SMD, NPTH, etc.)
-                    }
-                    
-                    pad_info.append(pad_data)
-
-                    if pad.GetNetname() is None:
-                        unrouted_pad_count += 1
-
+                   
             return {
                 "success": True,
                 "net_info": net_info,
-                "pad_info" : pad_info,
-                "unrouted pads": unrouted_pad_count
             }
 
         except Exception as e:
@@ -284,13 +229,11 @@ class BoardManager:
         """Parse position from dictionary to KiCad coordinates"""
         try:
             if "pad" in pos_dict:
-                # Find pad by reference (e.g., "R1.1")
-                #TODO is this even necessary
                 pad = self._find_pad(pos_dict["pad"])
                 if pad:
                     return pad.GetPosition()
             elif "x" in pos_dict and "y" in pos_dict:
-                # Convert mm coordinates to nanometers
+                # Convert mm  to nanometers
                 x_nm = int(pos_dict["x"] * 1000000)
                 y_nm = int(pos_dict["y"] * 1000000)
                 return pcbnew.VECTOR2I(x_nm, y_nm)
@@ -299,7 +242,6 @@ class BoardManager:
         except Exception:
             return None
         
-    #TODO: don't know if that is needed too 
     def _find_pad(self, pad_ref: str) -> Optional[pcbnew.PAD]:
         """Find a pad by reference (format: 'R1.1' for component R1, pad 1)"""
         try:
@@ -318,3 +260,234 @@ class BoardManager:
             return None
         except Exception:
             return None
+
+    def basic_board_info(self):
+        """
+        get basic board info
+        """
+
+        if not self.board:
+            return {
+                "success": False,
+                "message": "Board not loaded"
+            }
+        
+        try:
+            bbox = self.board.GetBoundingBox()
+            return {
+                "success": True,
+                "data": {
+                    "filename": self.board.GetFileName(),
+                    "bounding_box": {
+                        "x": bbox.GetX() / 1e6,
+                        "y": bbox.GetY() / 1e6,
+                        "width": bbox.GetWidth() / 1e6,
+                        "height": bbox.GetHeight() / 1e6
+                    },
+                    "net_count": self.board.GetNetCount()
+                }
+            }
+        except Exception as e:
+            logging.warning(f"Could not extract board info: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def get_design_rules(self):
+        """
+        get design info of pcb board
+        """
+
+        if not self.board:
+            return {
+                "success": False,
+                "message": "Board not loaded"
+            }
+        
+        try:
+            design_settings = self.board.GetDesignSettings()
+            return {
+                "success": True,
+                "data": {
+                    "smallest_clearance": design_settings.GetSmallestClearanceValue() / 1e6,
+                    "custom_via_size": design_settings.GetCustomViaSize() / 1e6,
+                    "custom_via_drill": design_settings.GetCustomViaDrill() / 1e6
+                }
+            }
+        except Exception as e:
+            logging.warning(f"Could not extract design rules: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+
+    def get_layers(self):
+
+        if not self.board:
+            return {
+                "success": False,
+                "message": "Board not loaded"
+            }
+
+        layers = []
+
+        try:
+            layers = {}
+            for layer_id in range(pcbnew.PCB_LAYER_ID_COUNT):
+                if self.board.IsLayerEnabled(layer_id):
+                    layers[layer_id] = {
+                        "name": self.board.GetLayerName(layer_id),
+                        "type": self.board.GetLayerType(layer_id)
+                    }
+            return {"success": True, "data": layers}
+        
+        except Exception as e:
+            logging.warning(f"Could not extract layer info: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+
+    def get_footprints_pads(self):
+        """
+        Get Pads of pcb Layout
+        """
+
+        if not self.board:
+            return {
+                "success": False,
+                "message": "Board not loaded"
+            }
+
+        try:
+            net_to_pads = {}
+            for pad in self.board.GetPads():
+                net = pad.GetNet()
+                if net:
+                    netname = net.GetNetname()
+                    net_to_pads.setdefault(netname, []).append(pad)
+
+            components = []
+
+            for footprint in self.board.GetFootprints():
+                try:
+                    pos = footprint.GetPosition()
+                    component = {
+                        "reference": footprint.GetReference(),
+                        "value": footprint.GetValue(),
+                        "footprint_id": str(footprint.GetFPID()),
+                        "position": {"x": pos.x / 1e6, "y": pos.y / 1e6},
+                        "layer": footprint.GetLayer(),
+                        "layer_name": self.board.GetLayerName(footprint.GetLayer()),
+                        "pads": []
+                    }
+
+                    for pad in footprint.Pads():
+                        pad_pos = pad.GetPosition()
+                        pad_size = pad.GetSize()
+                        pad_net = pad.GetNet()
+                        netname = pad_net.GetNetname() if pad_net else None
+
+                        connected = []
+                        if netname and netname in net_to_pads:
+                            for other_pad in net_to_pads[netname]:
+                                if other_pad != pad:
+                                    connected.append({
+                                        "pad_number": other_pad.GetNumber(),
+                                        "net_name": netname
+                                    })
+
+                        pad_info = {
+                            "number": pad.GetNumber(),
+                            "position": {"x": pad_pos.x / 1e6, "y": pad_pos.y / 1e6},
+                            "size": {"x": pad_size.x / 1e6, "y": pad_size.y / 1e6},
+                            "shape": pad.GetShape(),
+                            "drill_size": pad.GetDrillSize().x / 1e6,
+                            "net_name": pad.GetNetname(),
+                            "net_code": pad.GetNetCode(),
+                            "connected_items": connected
+                        }
+
+                        component["pads"].append(pad_info)
+                    components.append(component)
+
+                except Exception as e:
+                    logging.warning(f"Component error: {str(e)}")
+                    components.append({"error": str(e)})
+
+            return {"success": True, "data": {"components": components}}
+
+        except Exception as e:
+            logging.warning(f"General components error: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def get_tracks_vias(self):
+        """
+        Get tracks and vias of pcb Layout
+        """
+        if not self.board:
+            return {
+                "success": False,
+                "message": "Board not loaded"
+            }
+
+
+        try:
+            tracks = []
+            vias = []
+
+            for item in self.board.GetTracks():
+                if isinstance(item, pcbnew.PCB_VIA):
+                    pos = item.GetPosition()
+                    vias.append({
+                        "position": {"x": pos.x / 1e6, "y": pos.y / 1e6},
+                        "drill": item.GetDrillValue() / 1e6,
+                        "net_name": item.GetNetname(),
+                    })
+                else:
+                    start = item.GetStart()
+                    end = item.GetEnd()
+                    tracks.append({
+                        "start": {"x": start.x / 1e6, "y": start.y / 1e6},
+                        "end": {"x": end.x / 1e6, "y": end.y / 1e6},
+                        "length": item.GetLength() / 1e6,
+                        "net_name": item.GetNetname(),
+                    })
+
+            return {
+                "success": True,
+                "data": {
+                    "tracks": tracks,
+                    "vias": vias
+                }
+            }
+        except Exception as e:
+            logging.warning(f"Could not extract tracks/vias: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+
+    def get_zones(self):
+        """
+        Get Zones of pcb layout
+        """
+        if not self.board:
+            return {"success": False, "message": "Board not loaded"}
+
+        try:
+            zones = []
+            for zone in self.board.Zones():
+                try:
+                    zone_info = {
+                        "net_name": zone.GetNetname(),
+                        "net_code": zone.GetNetCode(),
+                        "layer": zone.GetLayer(),
+                        "layer_name": self.board.GetLayerName(zone.GetLayer()),
+                        "area": zone.GetArea() / 1e6,
+                        "min_thickness": zone.GetMinThickness() / 1e6,
+                        "thermal_relief_gap": zone.GetThermalReliefGap() / 1e6,
+                        "thermal_relief_copper_bridge": zone.GetThermalReliefSpokeWidth() / 1e6,
+                        "zone_name": zone.GetZoneName() if hasattr(zone, 'GetZoneName') else ""
+                    }
+                    zones.append(zone_info)
+                except Exception as zerr:
+                    logging.warning(f"Zone error: {str(zerr)}")
+                    zones.append({"error": str(zerr)})
+
+            return {"success": True, "data": zones}
+        except Exception as e:
+            logging.warning(f"General zone error: {str(e)}")
+            return {"success": False, "message": str(e)}

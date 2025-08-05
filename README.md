@@ -157,11 +157,14 @@ The KiCad MCP Server provides several key features, each with detailed documenta
 - **Circuit Pattern Recognition**: Automatically identify common circuit patterns in your schematics
   - *Example:* "What power supply topologies am I using in my IoT device?" → Identifies buck, boost, or linear regulators
 
-- **File Management & Automation**: Scans configured datasheet directories (DATASHEET_PATH) for .pdf files, exposing metadata and URLs for analysis or display. But Claude’s PDF URL analysis is rate-limited, so use local PDF parsing.
+- **Footprint and Symbol Creation**: Let Claude scan Pdfs (use Prompts), create footprints and symbols and save to library table.
    - *Example:* "Safe the generated Footprint and Symbol Files and add them to the Library" → automate the  process of file creation, directory handling, and global table integration
 
 - **Component Management**: Can place a Component in a PCB File
-- *Example:* "Add a Resistor to this project: ..." → places a resistor randomly in the pcb file of the specified Project 
+- *Example:* "Add a Resistor to this project: ..." → places a resistor randomly in the pcb file of the specified Project
+
+- **Routing**: Can place Routes in a PCB File:
+- *Example:* "Extraxt the netlist and route the connections in the PCB File" -> routes are being placed on the pcb file between the right pads or components (Routes do not have a 45° angle, routes do not have to be within board boundaries, claude does not care about overlaps)
 
 For more examples and details on each feature, see the dedicated guides in the documentation. You can also ask the LLM what tools it has access to!
 
@@ -202,7 +205,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [Circuit Pattern Recognition](docs/pattern_guide.md)
 - [Footprint and Symbol generation](docs/footprint_symbol_generation_guide.md)
 - [Prompt Templates](docs/prompt_guide.md)
-- [Component Guide](docs/component_guide.md)
+- [Component Guide and Routing](docs/component_routing_guide.md)
 
 ## Configuration
 
@@ -214,6 +217,9 @@ The KiCad MCP Server can be configured using environment variables or a `.env` f
 | `KICAD_SEARCH_PATHS` | Comma-separated list of directories to search for KiCad projects | `~/pcb,~/Electronics,~/Projects` |
 | `KICAD_USER_DIR` | Override the default KiCad user directory | `~/Documents/KiCadProjects` |
 | `KICAD_APP_PATH` | Override the default KiCad application path | `/Applications/KiCad7/KiCad.app` |
+TODO
+| `DATASHEET_PATH` | Directory with Datasheets that MCP Server has access to  (Override default Path) | `` |
+
 
 See [Configuration Guide](docs/configuration.md) for more details.
 

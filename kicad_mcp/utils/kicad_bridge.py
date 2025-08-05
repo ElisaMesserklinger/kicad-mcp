@@ -3,11 +3,8 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
-import threading
 import logging
 
-
-logging.basicConfig(filename="C:/Git/kicad-mcp/mcp_sunprocess.log", level=logging.DEBUG)
 
 class KiCadBridge:
     """Bridge between MCP server and KiCad Python environment."""
@@ -20,8 +17,8 @@ class KiCadBridge:
         """Find KiCad Python executable."""
         paths = [
             #Edit
-            "C:/Program Files/KiCad/9.0/bin/python.exe",
-            "C:/Users/messeel/AppData/Local/Programs/KiCad/9.0/bin/python.exe"
+            os.path.join(os.getenv('ProgramFiles'), 'KiCad', '9.0', 'bin', 'python.exe'),
+            os.path.join(os.getenv('LOCALAPPDATA'), 'Programs', 'KiCad', '9.0', 'bin', 'python.exe')
         ]
         
         for path in paths:
@@ -34,7 +31,7 @@ class KiCadBridge:
         """Create the subprocess script that uses your existing files."""
         
         # Get current directory
-        current_dir = Path(__file__).parent #import for later imports
+        current_dir = Path(__file__).parent
         
         # Create subprocess script
         script_content = '''
@@ -43,10 +40,7 @@ import sys
 import json
 from pathlib import Path
 import logging
-import threading
 import os
-
-sys.stdout.flush()
 
 # Project Path Setup
 project_root = Path("{project_root}")
@@ -77,7 +71,6 @@ if UTILS_AVAILABLE:
     board_manager = BoardManager()
     component_manager = ComponentManager()
 
-# DIRECT EXECUTION
 if __name__ == "__main__":
     try:
         if not UTILS_AVAILABLE:
@@ -90,7 +83,6 @@ if __name__ == "__main__":
         if method_name == "load_board":
             result = board_manager.load_board(params["project_path"])
             if result["success"]:
-                logging.debug("Successfully loaded board in subprocess")
                 component_manager.set_board(board_manager.get_board())
                 logging.debug(json.dumps(result))
 
@@ -134,7 +126,6 @@ if __name__ == "__main__":
             
             logging.debug("DEBUG: Board saved successfully")
             
-            # Return combined result
             result = {{
                 "success": True,
                 "message": f"Component placed and saved: {{params['component_id']}}",
@@ -216,8 +207,7 @@ if __name__ == "__main__":
         elif method_name == "get_net_pcb":
             project_path = params["project_path"]
 
-            #load current board
-            logging.debug("DEBUG: Loading board for move operation...")
+            logging.debug("DEBUG: Loading board...")
             load_result = board_manager.load_board(project_path)
             if not load_result["success"]:
                 print(json.dumps(load_result))
@@ -236,7 +226,6 @@ if __name__ == "__main__":
                     logging.debug("DEBUG: Nets extracted successfully")
                     print(json.dumps(net_extract))
                 else:
-                    logging.error(f"ERROR: Failed to extract nets: {net_extract.get('message', 'Unknown error')}")
                     print(json.dumps(net_extract))
                     sys.exit(1)
                     
@@ -253,8 +242,7 @@ if __name__ == "__main__":
         elif method_name == "track_pcb_routes":
             project_path = params["project_path"]
         
-            #load current board
-            logging.debug("DEBUG: Loading board for move operation...")
+            logging.debug("DEBUG: Loading board...")
             load_result = board_manager.load_board(project_path)
             if not load_result["success"]:
                 print(json.dumps(load_result))
@@ -265,11 +253,10 @@ if __name__ == "__main__":
             logging.debug("DEBUG: Board loaded successfully")
 
             #Set track 
-            all_results = []  # To hold results of each route
+            all_results = [] 
             try:
                 routes = params["route"]
-                logging.debug("Routes:")
-                logging.debug(routes)
+
                 for route in routes:
                     start = route.get("start")
                     end = route.get("end")
@@ -320,7 +307,6 @@ if __name__ == "__main__":
                 print(json.dumps(result))
 
             except Exception as e:
-                # Handle unexpected errors that may occur during routing or saving
                 error_result = {
                     "success": False,
                     "message": "Exception occurred during routing",
@@ -330,19 +316,256 @@ if __name__ == "__main__":
                 all_results.append(error_result)
                 logging.debug(json.dumps(result))
                 print(json.dumps(result))
-        
 
+        elif method_name == "extract_basic_info":
+            project_path = params["project_path"]
+        
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.basic_board_info()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
+
+        elif method_name == "extract_designRules":
+            project_path = params["project_path"]
+        
+            #load current board
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.get_design_rules()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
+
+        elif method_name == "extract_layers":
+            project_path = params["project_path"]
+        
+            #load current board
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.get_layers()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
+
+        elif method_name == "extract_pads":
+            project_path = params["project_path"]
+        
+            #load current board
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.get_footprints_pads()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
+
+
+        elif method_name == "extract_track_vias":
+            project_path = params["project_path"]
+        
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.get_tracks_vias()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
+
+        elif method_name == "extract_zones":
+            project_path = params["project_path"]
+        
+            #load current board
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.get_zones()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
+
+
+        elif method_name == "extract_basic_info":
+            project_path = params["project_path"]
+        
+            #load current board
+            logging.debug("DEBUG: Loading board for...")
+            load_result = board_manager.load_board(project_path)
+            if not load_result["success"]:
+                print(json.dumps(load_result))
+                sys.exit(1)
+            
+            # Set board in component manager
+            component_manager.set_board(board_manager.get_board())
+            logging.debug("DEBUG: Board loaded successfully")
+
+            try:
+                pcb_info = board_manager.basic_board_info()
+                
+                if pcb_info["success"]:
+                    logging.debug("DEBUG: Info extracted successfully")
+                    print(json.dumps(pcb_info))
+                else:
+                    print(json.dumps(pcb_info))
+                    sys.exit(1)
+
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "message": "Exception occurred during info extraction",
+                    "error": str(e)
+                }
+                logging.error(f"ERROR: Exception during info extraction: {str(e)}")
+                print(json.dumps(error_result))
+                sys.exit(1)
         
         else:
             print(json.dumps({{"success": False, "error": f"Unknown method: {{method_name}}"}}))
             
     except Exception as e:
         print(json.dumps({{"success": False, "error": str(e)}}))
+
+
+    
 '''
 
-        # FORMAT the script with the actual project root path
         project_root_path = str(current_dir).replace('\\', '/')
-        #formatted_script = script_content.format(project_root=project_root_path)
         formatted_script = script_content.replace("{project_root}", project_root_path) 
 
         # Save script
@@ -353,9 +576,6 @@ if __name__ == "__main__":
 
     def _run_subprocess(self, method_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """Run subprocess with method and parameters."""
-        logging.debug(f"Method: {method_name}")
-        logging.debug(f"Params: {params}")
-        
         try:             
             result = subprocess.run([
                 self.kicad_python, 
@@ -369,10 +589,6 @@ if __name__ == "__main__":
                 timeout=60
             )
 
-            logging.debug(f"Subprocess return code: {result.returncode}")
-            logging.debug(f"Subprocess stdout: {result.stdout}")
-            logging.debug(f"Subprocess stderr: {result.stderr}")
-            
             if result.returncode != 0:
                 return {
                     "success": False,
@@ -383,7 +599,6 @@ if __name__ == "__main__":
             
             # Parse the JSON output
             try:
-                logging.debug("Try to parse JSON loads")
                 return json.loads(result.stdout)
             except json.JSONDecodeError as e:
                 return {
@@ -394,18 +609,13 @@ if __name__ == "__main__":
                 }
             
         except subprocess.TimeoutExpired:
-            logging.error("Subprocess timeout")
             return {"success": False, "error": "Command timeout after 60 seconds"}
         except Exception as e:
-            logging.error(f"Subprocess error: {str(e)}")
             return {"success": False, "error": f"Subprocess execution failed: {str(e)}"}
         
-    
-
     #functions that are called by tools
+
     def load_board(self, project_path: str) -> Dict[str, Any]:
-        logging.debug("Called Load Board with Tool")
-        logging.debug("Project Path")
         return self._run_subprocess("load_board", {"project_path": project_path})
     
     def place_component(self, project_path: str, component_id: str, position: Dict[str, Any],  library: str, 
@@ -437,15 +647,55 @@ if __name__ == "__main__":
         })
     
     def get_net_pcb(self, project_path: str) -> Dict[str, Any]:
-
+        """
+        Extract Net List
+        """
         return self._run_subprocess("get_net_pcb", {
             "project_path": project_path})
     
     def track_pcb_routes(self, project_path: str, route: Dict[str, Any]) -> Dict[str, Any]:
+       """
+       place routes on pcb board
+       """
        return self._run_subprocess("track_pcb_routes", {
         "project_path": project_path,
         "route": route  
     })
+
+
+    #extract board info: 
+
+    def extract_basic_info(self, project_path: str) -> Dict[str, Any]:
+        return self._run_subprocess("extract_basic_info", {
+        "project_path": project_path
+    })
+
+    def extract_designRules(self, project_path: str) -> Dict[str, Any]:
+        return self._run_subprocess("extract_designRules", {
+        "project_path": project_path
+    })
+
+    def extract_layers(self, project_path: str) -> Dict[str, Any]:
+        return self._run_subprocess("extract_layers", {
+        "project_path": project_path
+    })
+
+    def extract_pads(self, project_path: str) -> Dict[str, Any]:
+        return self._run_subprocess("extract_pads", {
+        "project_path": project_path
+    })
+
+    def extract_track_vias(self, project_path: str) -> Dict[str, Any]:
+        return self._run_subprocess("extract_track_vias", {
+        "project_path": project_path
+    })
+
+    def extract_zones(self, project_path: str) -> Dict[str, Any]:
+        return self._run_subprocess("extract_zones", {
+        "project_path": project_path
+    })
+
+
 
 
     

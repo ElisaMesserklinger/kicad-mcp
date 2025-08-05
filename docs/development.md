@@ -30,37 +30,46 @@ The KiCad MCP Server follows a modular architecture:
 
 ```
 kicad-mcp/
-├── main.py                         # Entry point
-├── kicad_mcp/                      # Main package
+├── main.py                                             # Entry point
+├── kicad_mcp/                                          # Main package
 │   ├── __init__.py
-│   ├── server.py                   # Server creation and setup
-│   ├── config.py                   # Configuration settings
-│   ├── context.py                  # Lifespan context management
-│   ├── resources/                  # Resource handlers
+│   ├── server.py                                       # Server creation and setup
+│   ├── config.py                                       # Configuration settings
+│   ├── context.py                                      # Lifespan context management
+│   ├── resources/                                      # Resource handlers
 │   │   ├── __init__.py
-│   │   ├── projects.py             # Project listing resources
-│   │   ├── files.py                # File content resources
-│   │   ├── drc_resources.py        # DRC report resources
-│   │   └── bom_resources.py        # BOM resources
-│   ├── tools/                      # Tool handlers
+│   │   ├── projects.py                                 # Project listing resources
+│   │   ├── files.py                                    # File content resources
+│   │   ├── drc_resources.py                            # DRC report resources
+│   │   └── bom_resources.py                            # BOM resources
+│   ├── tools/                                          # Tool handlers
 │   │   ├── __init__.py
-│   │   ├── project_tools.py        # Project management tools
-│   │   ├── analysis_tools.py       # Design analysis tools
-│   │   ├── drc_tools.py            # DRC check tools
-│   │   ├── export_tools.py         # Export and thumbnail tools
-│   │   └── bom_tools.py            # BOM management tools
-│   ├── prompts/                    # Prompt templates
+│   │   ├── project_tools.py                            # Project management tools
+│   │   ├── analysis_tools.py                           # Design analysis tools
+│   │   ├── drc_tools.py                                # DRC check tools
+│   │   ├── export_tools.py                             # Export and thumbnail tools
+│   │   └── bom_tools.py                                # BOM management tools
+│   │   └── create_foodprint_symbol_tools.py            # Save Footprints and Symbols 
+│   │   ├── routing_tools.py                            # place Routes on PCB Board
+│   ├── prompts/                                        # Prompt templates
 │   │   ├── __init__.py
-│   │   ├── templates.py            # General KiCad prompts
-│   │   ├── drc_prompt.py           # DRC-specific prompts
-│   │   └── bom_prompts.py          # BOM-specific prompts
-│   └── utils/                      # Utility functions
+│   │   ├── templates.py                                # General KiCad prompts
+│   │   ├── drc_prompt.py                               # DRC-specific prompts
+│   │   ├── footprint_prompts.py                        # Symbol, Footprint specific prompts
+│   │   ├── routing_prompts.py                          # Routing specific Prompts
+│   │   └── bom_prompts.py                              # BOM-specific prompts
+│   └── utils/                                          # Utility functions
 │       ├── __init__.py
-│       ├── file_utils.py           # File handling utilities
-│       ├── kicad_utils.py          # KiCad-specific functions
-│       ├── python_path.py          # Python path setup for KiCad modules
-│       ├── drc_history.py          # DRC history tracking
-│       └── env.py                  # Environment variable handling
+│       ├── file_utils.py                               # File handling utilities
+│       ├── kicad_utils.py                              # KiCad-specific functions
+│       ├── python_path.py                              # Python path setup for KiCad modules
+│       ├── drc_history.py                              # DRC history tracking
+│       ├── board_utils.py                              # PCB Board methods
+│       ├── create_foodprint_symbol_utils.py            # Methods for symbol and footprint creation
+│       ├── kicad_bridge.py                             # Bridge to Kicad Python
+│       ├── kicad_script_subprocess.py                  # Automatically created File for Kicad Python environment
+│       ├── set_component_utils.py                      # Component specific Methods
+│       └── env.py                                      # Environment variable handling
 ```
 
 ## Adding New Features

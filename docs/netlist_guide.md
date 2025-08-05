@@ -16,7 +16,7 @@ The netlist extraction functionality allows you to:
 
 | Task | Example Prompt |
 |------|---------------|
-| Extract netlist | `Extract the netlist from my schematic at /path/to/project.kicad_sch` |
+| Extract netlist | `Extract the netlist from my schematic at /path/to/project.kicad_sch (if there are subsheet every sheet netlist is being extracted)` |
 | Analyze project netlist | `Analyze the netlist in my KiCad project at /path/to/project.kicad_pro` |
 | Check component connections | `Show me the connections for R5 in my schematic at /path/to/project.kicad_sch` |
 | View formatted netlist | `Show me the netlist report for /path/to/project.kicad_sch` |

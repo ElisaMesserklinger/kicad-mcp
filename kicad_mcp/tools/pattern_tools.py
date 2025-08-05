@@ -18,15 +18,6 @@ from kicad_mcp.utils.pattern_recognition import (
     identify_sensor_interfaces
 )
 
-#Todo delete
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('test.log'),  # Also log to file
-    ]
-)
-
 def register_pattern_tools(mcp: FastMCP) -> None:
     """Register circuit pattern recognition tools with the MCP server.
     
@@ -173,7 +164,8 @@ def register_pattern_tools(mcp: FastMCP) -> None:
                 ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
-            schematic_paths = files["schematic"]
+            # if project has Hierarchical Sheets in kicad
+            schematic_paths = files["schematic"] 
             if isinstance(schematic_paths, str):
                 schematic_paths = [schematic_paths]
 

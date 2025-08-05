@@ -41,8 +41,3 @@ def register_routing_prompts(mcp: FastMCP) -> None:
         
         return prompt
     
-"""
- 2. Layer Strategy:
-           - Use the top layer (F.Cu) for horizontal routes and the bottom layer (B.Cu) for vertical routes when possible.
-           - Use vias sparingly to switch layers only when needed (e.g., to avoid obstacles or reduce crosstalk).
-"""

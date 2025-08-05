@@ -1,7 +1,6 @@
 """
 Component-related utility functions for KiCad operations.
 """
-
 import sys
 import logging
 from typing import Dict, Any, Optional, Tuple
@@ -49,7 +48,6 @@ class ComponentManager:
         Returns:
             Tuple of (x_nm, y_nm)
         """
-
         unit = position.get("unit", "mm")
         scale = 1000000 if unit == "mm" else 25400000  # mm or inch to nm
         x_nm = int(position["x"] * scale)
@@ -101,13 +99,10 @@ class ComponentManager:
 
          # Parse component ID and set footprint ID
         if library:
-            # Use provided library
             library_name = library
             footprint_name = component_id
         
-        
         # Set footprint ID
-        
         footprint.SetFPID(pcbnew.LIB_ID(component_id, library_name))
 
         # Set position
@@ -243,117 +238,3 @@ class ComponentManager:
             layer=self.board.GetLayerName(footprint.GetLayer())
         )
     
-
-    def list_components(self) -> list[ComponentInfo]:
-        """List all components on the board.
-        
-        Returns:
-            List of ComponentInfo objects
-        """
-        if not self.board:
-            return []
-        
-        components = []
-        for footprint in self.board.GetFootprints():
-            pos = footprint.GetPosition()
-            position = self.convert_position_from_nanometers(pos.x, pos.y, "mm")
-            
-            components.append(ComponentInfo(
-                reference=footprint.GetReference(),
-                value=footprint.GetValue(),
-                footprint=str(footprint.GetFPID().GetLibItemName()),
-                position=position,
-                rotation=float(footprint.GetOrientation().AsDegrees()),
-                layer=self.board.GetLayerName(footprint.GetLayer())
-            ))
-        
-        return components
-    
-    def rotate_component(self, reference: str, angle: float) -> dict:
-        """
-        Rotate a component to a specific angle
-        
-        Args:
-            reference: Component reference designator (e.g., "R1", "U5")
-            angle: Absolute rotation angle in degrees (0-360)
-            
-        Returns:
-            Dict with rotation results
-        """
-        try:
-            if not self.board:
-                return {
-                    "success": False,
-                    "error": "No board loaded. Call set_board() first."
-                }
-            
-            # Find the component by reference
-            footprint = self.board.FindFootprintByReference(reference)
-            if not footprint:
-                return {
-                    "success": False,
-                    "error": f"Component '{reference}' not found on board"
-                }
-            
-            # Get current rotation for comparison
-            current_angle = footprint.GetOrientationDegrees()
-            
-            # Set new rotation
-            # Note: SetOrientationDegrees() accepts degrees directly, not decidegrees
-            footprint.SetOrientationDegrees(angle)
-            
-            # Get component position for reference
-            position = footprint.GetPosition()
-            
-            return {
-                "success": True,
-                "reference": reference,
-                "previous_angle": current_angle,
-                "new_angle": angle,
-                "position": {
-                    "x": position.x / 1000000,  # Convert from nanometers to mm
-                    "y": position.y / 1000000
-                },
-                "footprint": footprint.GetFPID().GetLibItemName().GetUTF8(),
-                "value": footprint.GetValue()
-            }
-            
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Component rotation failed: {str(e)}"
-            }
-
-    
-
-    
-    def get_board_info(self) -> Dict[str, Any]:
-        """Get board information.
-        
-        Returns:
-            Dict with board details
-        """
-        if not self.board:
-            return {"error": "No board loaded"}
-        
-        bbox = self.board.GetBoardEdgesBoundingBox()
-        footprints = list(self.board.GetFootprints())
-        
-        # Get copper layer names
-        layer_names = []
-        for i in range(self.board.GetCopperLayerCount()):
-            layer_id = self.board.GetCopperLayerID(i)
-            layer_name = self.board.GetLayerName(layer_id)
-            layer_names.append(layer_name)
-        
-        return {
-            "pcb_path": self.board.GetFileName(),
-            "footprint_count": len(footprints),
-            "layer_count": self.board.GetCopperLayerCount(),
-            "board_size": {
-                "width": bbox.GetWidth() / 1000000,  # nm to mm
-                "height": bbox.GetHeight() / 1000000,
-                "unit": "mm"
-            },
-            "copper_layers": layer_names
-        }

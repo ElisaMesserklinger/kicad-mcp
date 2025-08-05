@@ -1,6 +1,7 @@
 mcp[cli]
 pandas
 sexpdata
+PyPDF2
 
 # Development/Testing
 pytest

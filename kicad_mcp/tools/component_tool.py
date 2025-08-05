@@ -11,7 +11,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('kicad_mcp.log'),  # Also log to file
+        logging.FileHandler('kicad_mcp.log')
     ]
 )
 
@@ -42,33 +42,17 @@ def register_component_tools(mcp: FastMCP) -> None:
     
     
         # Check if KiCadBridge is available
-        if kicad_subprocess is None:
-            error_msg = "KiCadBridge not initialized"
-            ctx.error(error_msg)
-            return {"success": False, "error": error_msg}
+        if (err := ensure_kicad_ready()):
+            return err
+        
+        pcb_path = resolve_pcb_path(project_path)
         
         ctx.info(f"Loading PCB board from {project_path}")
         await ctx.report_progress(10, 100)
-        
-        # Log the exact path being used
-        ctx.info(f"Absolute path: {os.path.abspath(project_path)}")
-        ctx.info(f"Path exists: {os.path.exists(project_path)}")
-        logger.debug(f"Absolute path: {os.path.abspath(project_path)}")
-        logger.debug(f"Path exists: {os.path.exists(project_path)}")
 
-
-        # Check if corresponding PCB file exists
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-            ctx.info(f"PCB file path: {pcb_path}")
-            ctx.info(f"PCB file exists: {os.path.exists(pcb_path)}")
-        else:
-            pcb_path = project_path
       
         try:
-            # Add timeout handling and better error reporting
             ctx.info("Starting board load operation...")
-            logger.info("Starting board load operation...")
             
             result = kicad_subprocess.load_board(pcb_path)
 
@@ -76,12 +60,10 @@ def register_component_tools(mcp: FastMCP) -> None:
             
             if result.get("success"):
                 ctx.info("Board loaded successfully")
-                logger.info("Board loaded successfully")
                 ctx.info(f"Board info: {result.get('board_info', {})}")
             else:
                 error_msg = result.get("error", "Failed to load board")
                 ctx.error(f"Board load failed: {error_msg}")
-                logger.error("Board failed to load")
             
             return result or {
             "success": False,
@@ -130,20 +112,12 @@ def register_component_tools(mcp: FastMCP) -> None:
         Returns:
             Dict with success status and component info
         """
-
         
         # Check if KiCadBridge is available
-        if kicad_subprocess is None:
-            error_msg = "KiCadBridge not initialized"
-            ctx.error(error_msg)
-            return {"success": False, "error": error_msg}
-       
-        if ctx:
-            ctx.info(f"Placing component {component_id} at {position}")
-            await ctx.report_progress(10, 100)
-
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
+        if (err := ensure_kicad_ready()):
+            return err
+        
+        pcb_path = resolve_pcb_path(project_path)
         
         try:
             
@@ -196,29 +170,15 @@ def register_component_tools(mcp: FastMCP) -> None:
             Dict with success status and component info
         """
 
-        # Check if KiCadBridge is available
-        if kicad_subprocess is None:
-            error_msg = "KiCadBridge not initialized"
-            ctx.error(error_msg)
-            return {"success": False, "error": error_msg}
+        if (err := ensure_kicad_ready()):
+            return err
         
-        if ctx:
-            ctx.info(f"Moving component {reference} to {position}")
-            logger.debug("Ready to move component:")
-            await ctx.report_progress(10, 100)
+        pcb_path = resolve_pcb_path(project_path)
         
-        # Convert project path to PCB path
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-        else:
-            pcb_path = project_path
-        
-        # Log the operation
         ctx.info(f"Moving component {reference} to position {position}")
         logger.info(f"Moving component {reference} to position {position}")
         
         try:
-            # Validate position dictionary
             if not isinstance(position, dict):
                 raise ValueError("Position must be a dictionary")
             
@@ -226,18 +186,15 @@ def register_component_tools(mcp: FastMCP) -> None:
             for key in required_keys:
                 if key not in position:
                     raise ValueError(f"Position dictionary missing required key: {key}")
-            
-            # Validate coordinates
+                
             if not isinstance(position['x'], (int, float)):
                 raise ValueError("X coordinate must be a number")
             if not isinstance(position['y'], (int, float)):
                 raise ValueError("Y coordinate must be a number")
             
-            # Validate rotation if provided
             if rotation is not None and not isinstance(rotation, (int, float)):
                 raise ValueError("Rotation must be a number")
             
-            # Call the KiCad bridge to move the component
             result = kicad_subprocess.move_component(
                 project_path=pcb_path,
                 reference=reference,
@@ -261,3 +218,13 @@ def register_component_tools(mcp: FastMCP) -> None:
             logger.error(error_msg)
             return {"success": False, "error": error_msg, "reference": reference}
 
+
+    def ensure_kicad_ready() -> Optional[Dict[str, Any]]:
+        """Check if KiCadBridge is available."""
+        if kicad_subprocess is None:
+            return {"success": False, "error": "KiCadBridge not initialized"}
+        return None
+    
+    def resolve_pcb_path(project_path: str) -> str:
+        """Convert .kicad_pro to .kicad_pcb if needed."""
+        return project_path.replace(".kicad_pro", ".kicad_pcb") if project_path.endswith(".kicad_pro") else project_path

@@ -2,24 +2,11 @@ import os
 import logging
 from typing import Dict, List, Any
 from mcp.server.fastmcp import FastMCP
-from dotenv import load_dotenv
 from typing import Dict, List, Any, Optional
-from pathlib import Path
 import asyncio
 
 
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('kicad-mcp.log'),
-    ]
-)
-
 from kicad_mcp.utils.kicad_bridge import KiCadBridge
-
-from kicad_mcp.config import KICAD_USER_DIR, ADDITIONAL_SEARCH_PATHS, DATASHEET_PATH
 
 try:
     kicad_subprocess = KiCadBridge()
@@ -29,8 +16,14 @@ except Exception as e:
     kicad_subprocess = None
 
 def register_routing_tools(mcp: FastMCP) -> None:
+    """
+    Register PCB routing tools with a FastMCP instance.
+
+    This function adds two tools to the provided `FastMCP` object for interacting with KiCad PCB files:
+    """
+
     @mcp.tool()
-    async def get_nets(project_path: str):
+    async def get_pcb_nets(project_path: str):
         """
         Extract all net names and their corresponding net codes from the loaded PCB.
 
@@ -45,14 +38,10 @@ def register_routing_tools(mcp: FastMCP) -> None:
             dict
         """        
         # Check if KiCadBridge is available
-        if kicad_subprocess is None:
-            error_msg = "KiCadBridge not initialized"
-            return {"success": False, "error": error_msg}
-
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-        else:
-            pcb_path = project_path
+        if (err := ensure_kicad_ready()):
+            return err
+        
+        pcb_path = resolve_pcb_path(project_path)
 
         try:
             logging.info("Starting load net operation...")
@@ -104,35 +93,17 @@ def register_routing_tools(mcp: FastMCP) -> None:
         """
        
         # Check if KiCadBridge is available
-        if kicad_subprocess is None:
-            error_msg = "KiCadBridge not initialized"
-            return {"success": False, "error": error_msg}
-
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-        else:
-            pcb_path = project_path
-
-
-        # Check if KiCadBridge is available
-        if kicad_subprocess is None:
-            error_msg = "KiCadBridge not initialized"
-            return {"success": False, "error": error_msg}
+        if (err := ensure_kicad_ready()):
+            return err
         
-        if project_path.endswith('.kicad_pro'):
-            pcb_path = project_path.replace('.kicad_pro', '.kicad_pcb')
-        else:
-            pcb_path = project_path
-        
-        results = []  
-        
+        pcb_path = resolve_pcb_path(project_path)
+                
         try:
             logging.info("Starting routing operation...")
 
             # Route each track
             result = kicad_subprocess.track_pcb_routes(pcb_path, routes)
 
-            # Log and append the result
             if result.get("success"):
                 logging.info(f"Routes placed successfully: {routes}")
             else:
@@ -160,6 +131,13 @@ def register_routing_tools(mcp: FastMCP) -> None:
             logging.error(error_msg)
             return {"success": False, "error": error_msg}
         
-
-        #"C:/Users/messeel/KiCadProjects/KiCad\\hw_PB238_uiws_mainboard_test\\PB238_uiws_mainboard.kicad_pro"
-        #"{"success": false, "message": "Exception occurred during routing", "error": "BoardManager.trace_routes() got an unexpected keyword argument 'start'"}
+     
+    def ensure_kicad_ready() -> Optional[Dict[str, Any]]:
+        """Check if KiCadBridge is available."""
+        if kicad_subprocess is None:
+            return {"success": False, "error": "KiCadBridge not initialized"}
+        return None
+    
+    def resolve_pcb_path(project_path: str) -> str:
+        """Convert .kicad_pro to .kicad_pcb if needed."""
+        return project_path.replace(".kicad_pro", ".kicad_pcb") if project_path.endswith(".kicad_pro") else project_path

@@ -2,13 +2,9 @@ import os
 import logging 
 from typing import Dict, List, Any, Optional
 import pathlib
-import anthropic 
 from pathlib import Path
 import sexpdata
 from PyPDF2 import PdfReader, PdfWriter
-
-
-
 
 from kicad_mcp.config import KICAD_USER_DIR, KICAD_APP_PATH, KICAD_EXTENSIONS, ADDITIONAL_SEARCH_PATHS, DATASHEET_PATH, KICAD_TABLE_PATH
 
@@ -43,8 +39,6 @@ def find_pdfs() -> List[Dict[str, Any]]:
     logging.info("Attempting to find PDF files...")
 
     search_dirs = [DATASHEET_PATH]
-    logging.info(f"Raw KICAD_USER_DIR: '{KICAD_USER_DIR}'")
-    logging.info(f"Raw search list before expansion: {search_dirs}")
 
     expanded_search_dirs = []
     for raw_dir in search_dirs:
@@ -91,59 +85,6 @@ def find_pdfs() -> List[Dict[str, Any]]:
     logging.info(f"Found {len(pdfs)} PDF files after scanning.")
     return pdfs
 
-# not helpful for longer dataseets because of Claude Rate Limits
-'''
-def analyze_pdfs(pdf_url: str, prompt: str) -> List[Dict[str, Any]]:
-    """
-    Analyze a list of PDFs using Claude (Anthropic) via URL-based document references.
-
-    Args:
-        pdf_urls: publicly accessible PDF URL.
-        prompt: Custom prompt/question to ask Claude about each PDF.
-
-    Returns:
-        List of analysis results per PDF (as Claude's structured response).
-    """
-    #does not really work because of limited tokens per minute 
-    client = anthropic.Anthropic()
-    results = []
-
-    try:
-            message = client.messages.create(
-                model="claude-3-5-haiku-20241022",  #change to other models
-                max_tokens=2000,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "document",
-                                "source": {
-                                    "type": "url",
-                                    "url": pdf_url
-                                }
-                            },
-                            {
-                                "type": "text",
-                                "text": prompt
-                            }
-                        ]
-                    }
-                ],
-            )
-            results.append({
-                "url": pdf_url,
-                "response": message.content
-            })
-    except Exception as e:
-            results.append({
-                "url": pdf_url,
-                "error": str(e)
-            })
-
-    return results
-'''
-
 def save_kicad_footprint(footprint_content: str, footprint_name: str, lib_name: str):
     """
     Save a KiCad footprint (.kicad_mod) file to a library
@@ -154,9 +95,7 @@ def save_kicad_footprint(footprint_content: str, footprint_name: str, lib_name: 
         library_path: Path to the .pretty library folder
     """
 
-    #Edit
     footprint_path = os.path.join(KICAD_USER_DIR, kicad_version, "footprints")
-    #footprint_path = "c:/Users/messeel/KiCadProjects/KiCad/9.0/footprints"
 
     try:
         # Validate inputs
@@ -175,9 +114,6 @@ def save_kicad_footprint(footprint_content: str, footprint_name: str, lib_name: 
         
         # Create library directory if it doesn't exist
         library_dir = Path(footprint_path)
-        # if .pretty already exists
-        #if lib_name.endswith(".pretty"):
-         #   lib_name = lib_name[:-7]  # ".pretty" has 7 signs
 
         path_to_lib = library_dir / f"{lib_name}.pretty"
         path_to_lib.mkdir(parents=True, exist_ok=True)
@@ -194,7 +130,6 @@ def save_kicad_footprint(footprint_content: str, footprint_name: str, lib_name: 
         with open(footprint_file, 'w', encoding='utf-8') as f:
             f.write(footprint_content)
         
-        #print(f"Successfully saved footprint: {footprint_file}")
         return {
             'success': True,
                 'message': f"Successfully saved footprint '{footprint_name}' in library '{lib_name}.pretty' )"
@@ -243,28 +178,26 @@ def save_kicad_footprint_symbol_to_table(lib_name: str, description: str, type: 
     if type == "symbol":
         table = "sym-lib-table"
         if not lib_name.endswith(".kicad_sym"):
-            lib_name += ".kicad_sym"
-        lib_path = Path(kicad_version_dir) / "symbols" / lib_name
+            library = lib_name + ".kicad_sym"
+        lib_path = Path(kicad_version_dir) / "symbols" / library
         path = lib_path.as_posix()
 
     elif type == "footprint":
         table = "fp-lib-table"
         if not lib_name.endswith(".pretty"):
-            lib_name += ".pretty"
-        lib_path = Path(kicad_version_dir) / "footprints" / lib_name
+            library += lib_name + ".pretty"
+        lib_path = Path(kicad_version_dir) / "footprints" / library
         path = lib_path.as_posix()
+
     else:
         return {
             'success': False,
             'message': f"Invalid type '{type}'. Must be 'symbol' or 'footprint'"
         }
 
-    logging.debug(path)
         
     #Path to global lib table: c:\Users\<User>\%AppData%\kicad\9.0\fp-lib-table
     lib_table_path = os.path.normpath(os.path.join(KICAD_TABLE_PATH, kicad_version, table))
-
-    #lib_table_path = Path(f"C:/Users/messeel/AppData/Roaming/kicad/{kicad_version}/{table}")
  
     if not os.path.exists(lib_table_path):
         return {
@@ -324,8 +257,6 @@ def save_kicad_symbol(symbol_content: str, symbol_name: str, lib_name: str):
         lib_path: Path where the library file is or should be located
     """
     
-
-    
     try:
             # Validate inputs
             if not symbol_content or not symbol_content.strip():
@@ -341,14 +272,11 @@ def save_kicad_symbol(symbol_content: str, symbol_name: str, lib_name: str):
             }
             
 
-            #Edit
-            #symbol_path = "c:/Users/messeel/KiCadProjects/KiCad/9.0/symbols"
             symbol_path = os.path.join(KICAD_USER_DIR, kicad_version, "symbols")
             
             # Construct full library file path
             library_file = Path(symbol_path) / f"{lib_name}.kicad_sym"
             is_new_library = not library_file.exists()
-            
 
             if is_new_library:
                 # Create directory if needed
@@ -376,13 +304,8 @@ def save_kicad_symbol(symbol_content: str, symbol_name: str, lib_name: str):
                     }
 
                     new_content = content[:insert_pos].rstrip() + '\n' + symbol_content.strip() + '\n' + content[insert_pos:]
-
-                    # Go back to start and overwrite
-                    #f.seek(0)
                     f.write(new_content)
-                    #f.truncate()
 
-            #print(f"Successfully saved symbol '{symbol_name}' to {library_file}")
             return {
                     'success': True,
                     'message': f"Successfully added symbol '{symbol_name}' to library '{lib_name}'"
@@ -445,7 +368,7 @@ def find_blocks(symbol_data, block_name):
 def validate_properties_symbol(symbol_data):
     props = find_blocks(symbol_data, "property")
     found = {
-        p[1]  # p[1] is the property name (e.g., 'Reference')
+        p[1]  #property name (e.g., 'Reference')
         for p in props
         if len(p) > 1 and isinstance(p[1], str)
     }
@@ -533,7 +456,6 @@ def validate_kicad_footprint(footprint_content: str):
     try:
         parsed = sexpdata.loads(footprint_content)
 
-          
         if (isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], sexpdata.Symbol) and parsed[0].value() == "footprint"):
             footprint_block = parsed 
         else:
@@ -569,8 +491,6 @@ def accessFiles(content: str, filename: str, filetype: str):
     else:
         return {"success": False, "error": "Invalid File Type"}
 
-    #Edit
-    #basePathToFiles = f"c:/Users/messeel/KiCadProjects/KiCad/9.0/{path}"
     basePathToFiles = os.path.join(KICAD_USER_DIR, kicad_version)
     full_path = os.path.join(basePathToFiles, path, filename)
 

@@ -20,11 +20,12 @@ These settings control where the server looks for KiCad projects:
 |---------------------|-------------|---------------|---------|
 | `KICAD_USER_DIR` | The main KiCad user directory | `~/Documents/KiCad` (macOS/Windows)<br>`~/kicad` (Linux) | `~/Documents/KiCadProjects` |
 | `KICAD_SEARCH_PATHS` | Additional directories to search for KiCad projects (comma-separated) | None | `~/pcb,~/Electronics,~/Projects/KiCad` |
+| `DATASHEET_PATH` | Path to Datasheets the Server should have access to | None | `~/pcb,~/Electronics,~/Projects/KiCad` |
+
 
 ### Application Paths
 
 These settings control how the server locates KiCad:
-
 | Environment Variable | Description | Default Value | Example |
 |---------------------|-------------|---------------|---------|
 | `KICAD_APP_PATH` | Path to the KiCad application | `/Applications/KiCad/KiCad.app` (macOS)<br>`C:\Program Files\KiCad` (Windows)<br>`/usr/share/kicad` (Linux) | `/Applications/KiCad7/KiCad.app` |

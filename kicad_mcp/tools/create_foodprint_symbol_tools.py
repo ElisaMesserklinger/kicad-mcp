@@ -2,10 +2,7 @@ import os
 import logging
 from typing import Dict, List, Any
 from mcp.server.fastmcp import FastMCP
-from dotenv import load_dotenv
 from typing import Dict, List, Any, Optional
-from pathlib import Path
-
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -16,10 +13,6 @@ logging.basicConfig(
 )
 
 from kicad_mcp.utils.create_foodprint_symbol_utils import *
-
-from kicad_mcp.config import KICAD_USER_DIR, ADDITIONAL_SEARCH_PATHS, DATASHEET_PATH
-load_dotenv()
-
 
 def register_footprint_symbol_tools(mcp: FastMCP) -> None:
     """
@@ -48,9 +41,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
         """
 
         logging.info("Executing list_pdfs tool...")
-        pdfs = find_pdfs()
-        logging.info(f"list_pdfs tool returning {len(pdfs)} PDF files.")
-        return pdfs
+        return find_pdfs()
 
     @mcp.tool()
     def save_footprint_mod(mod_data: str, footprint_name: str, lib_name: str) -> Dict[str, Any]:
@@ -70,7 +61,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
 
 
     @mcp.tool()
-    def add_footprint_to_Lib(lib_path: str, lib_name: str, description: str) -> Dict[str, Any]:
+    def add_footprint_to_Lib(lib_name: str, description: str) -> Dict[str, Any]:
         """
         Tool: Add a footprint library to the global KiCad footprint table.
 
@@ -86,7 +77,8 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
             e.g. { "success": True, "Path": lib_path }
         """
 
-        type = "footprint"
+        type = "footprint" #differentiate between footprint and symbol
+
         return save_kicad_footprint_symbol_to_table(lib_name, description, type)
     
 
@@ -106,7 +98,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
         return save_kicad_symbol(file_data, symbol_name, lib_name)
 
     @mcp.tool()
-    def add_symbol_to_Lib(lib_path: str, lib_name: str, description: str) -> Dict[str, Any]:
+    def add_symbol_to_Lib(lib_name: str, description: str) -> Dict[str, Any]:
         """
         Tool: Add a symbol library to the global KiCad symbol table.
 
@@ -121,7 +113,8 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
             A dictionary with success flag and library path if successful.
         """
 
-        type = "symbol"
+        type = "symbol" #differentiate between footprint and symbol
+
         return save_kicad_footprint_symbol_to_table(lib_name, description, type)
     
     
@@ -139,15 +132,9 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
 
         Returns:
             A dictionary containing validation status and any errors or warnings.
-            Example:
-            {
-                "valid": True,
-                "errors": [],
-                "warnings": ["Missing footprint field"]
-            }
+            
         """
-        result = validate_kicad_symbol(symbol_content)
-        return result
+        return validate_kicad_symbol(symbol_content)
     
 
     @mcp.tool()
@@ -162,15 +149,8 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
 
         Returns:
             A dictionary with validation results.
-            Example:
-            {
-                "valid": True,
-                "errors": [],
-                "warnings": ["Text size too small"]
-            }
         """
-        result = validate_kicad_footprint(footprint_content)
-        return result
+        return validate_kicad_footprint(footprint_content)
     
 
     @mcp.tool()
@@ -187,9 +167,7 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
                             including a message and optionally an error detail.
         """
 
-
-        result = accessFiles(content, filename, filetype)
-        return result
+        return accessFiles(content, filename, filetype)
     
 
     @mcp.tool()
@@ -221,25 +199,4 @@ def register_footprint_symbol_tools(mcp: FastMCP) -> None:
             Dict
         """
         return split_pdf(input_pdf_path, output_dir, pages_per_split, filename)
-
-
-
-    # not helpful because of Claudes Rate Limits
-    '''
-    @mcp.tool()
-    def analyze_pdf(pdf_data: str) -> List[Dict[str, Any]]:
-        """
-        Analyze a single PDF from Claude input.
-        
-        Args:
-            pdf_url: A public URL pointing to a PDF file.
-            prompt: A question or instruction for Claude to apply to the PDF.
-        
-        Returns:
-            Claude's analysis of the document or error if failed.
-        """
-        logging.info("Executing analyze_pdf_url tool")
-
-        return
-    '''
 

@@ -209,46 +209,51 @@ def register_bom_tools(mcp: FastMCP) -> None:
             ctx.info("Schematic file not found in project")
             return {"success": False, "error": "Schematic file not found"}
         
-        schematic_file = files["schematic"]
+        schematic_paths = files["schematic"]
+        if isinstance(schematic_paths, str):
+            schematic_paths = [schematic_paths]
         project_dir = os.path.dirname(project_path)
         project_name = os.path.basename(project_path)[:-10]  # Remove .kicad_pro extension
-        
+
         await ctx.report_progress(20, 100)
-        ctx.info(f"Found schematic file: {os.path.basename(schematic_file)}")
         
         # Try to export BOM
         # This will depend on KiCad's command-line tools or Python modules
-        export_result = {"success": False}
-        
-        if kicad_modules_available:
+        export_results = []
+        for schematic_path in schematic_paths:
+            schematic_name = os.path.splitext(os.path.basename(schematic_path))[0]
             try:
-                # Try to use KiCad Python modules
-                ctx.info("Attempting to export BOM using KiCad Python modules...")
-                export_result = await export_bom_with_python(schematic_file, project_dir, project_name, ctx)
+                ctx.info(f"Exporting BOM for schematic: {schematic_name}")
+                result = await export_bom_with_cli(
+                    schematic_path,
+                    project_dir,
+                    f"{project_name}_{schematic_name}",
+                    ctx
+                )
+                export_results.append(result)
+                
             except Exception as e:
-                logging.debug(f"Error exporting BOM with Python modules: {str(e)}", exc_info=True)
-                ctx.info(f"Error using Python modules: {str(e)}")
-                export_result = {"success": False, "error": str(e)}
-        
-        # If Python method failed, try command-line method
-        if not export_result.get("success", False):
-            try:
-                ctx.info("Attempting to export BOM using command-line tools...")
-                export_result = await export_bom_with_cli(schematic_file, project_dir, project_name, ctx)
-            except Exception as e:
-                logging.debug(f"Error exporting BOM with CLI: {str(e)}", exc_info=True)
-                ctx.info(f"Error using command-line tools: {str(e)}")
-                export_result = {"success": False, "error": str(e)}
-        
-        await ctx.report_progress(100, 100)
-        
-        if export_result.get("success", False):
-            ctx.info(f"BOM exported successfully to {export_result.get('output_file', 'unknown location')}")
-        else:
-            ctx.info(f"Failed to export BOM: {export_result.get('error', 'Unknown error')}")
-        
-        return export_result
+                error_msg = f"Error exporting BOM for {schematic_name}: {str(e)}"
+                logging.debug(error_msg, exc_info=True)
+                ctx.info(error_msg)
+                export_results.append({"success": False, "error": str(e), "schematic": schematic_name})
+                
+                await ctx.report_progress(100, 100)
 
+        successful_exports = [res for res in export_results if res.get("success")]
+        failed_exports = [res for res in export_results if not res.get("success")]
+
+        for res in successful_exports:
+            ctx.info(f"BOM exported: {res.get('output_file')}")
+
+        for res in failed_exports:
+            ctx.info(f"Failed to export BOM for {res.get('schematic', 'unknown')}: {res.get('error')}")
+
+        return {
+            "success": len(failed_exports) == 0,
+            "exported": successful_exports,
+            "failed": failed_exports
+        }
 
 # Helper functions for BOM processing
 
@@ -583,47 +588,6 @@ def analyze_bom_data(components: List[Dict[str, Any]], format_info: Dict[str, An
         results["total_component_count"] = len(components)
     
     return results
-
-
-async def export_bom_with_python(schematic_file: str, output_dir: str, project_name: str, ctx: Context) -> Dict[str, Any]:
-    """Export a BOM using KiCad Python modules.
-    
-    Args:
-        schematic_file: Path to the schematic file
-        output_dir: Directory to save the BOM
-        project_name: Name of the project
-        ctx: MCP context for progress reporting
-        
-    Returns:
-        Dictionary with export results
-    """
-    logging.debug(f"Exporting BOM for schematic: {schematic_file}")
-    await ctx.report_progress(30, 100)
-    
-    try:
-        # Try to import KiCad Python modules
-        # This is a placeholder since exporting BOMs from schematic files
-        # is complex and KiCad's API for this is not well-documented
-        import kicad
-        import kicad.pcbnew
-        
-        # For now, return a message indicating this method is not implemented yet
-        logging.debug("BOM export with Python modules not fully implemented")
-        ctx.info("BOM export with Python modules not fully implemented yet")
-        
-        return {
-            "success": False,
-            "error": "BOM export using Python modules is not fully implemented yet. Try using the command-line method.",
-            "schematic_file": schematic_file
-        }
-    
-    except ImportError:
-        logging.debug("Failed to import KiCad Python modules")
-        return {
-            "success": False,
-            "error": "Failed to import KiCad Python modules",
-            "schematic_file": schematic_file
-        }
 
 
 async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name: str, ctx: Context) -> Dict[str, Any]:
