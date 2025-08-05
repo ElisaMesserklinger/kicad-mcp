@@ -57,6 +57,7 @@ kicad-mcp/
 │   │   ├── drc_prompt.py                               # DRC-specific prompts
 │   │   ├── footprint_prompts.py                        # Symbol, Footprint specific prompts
 │   │   ├── routing_prompts.py                          # Routing specific Prompts
+│   │   ├── find_error_schematic.py                     # Checking for errror Prompt
 │   │   └── bom_prompts.py                              # BOM-specific prompts
 │   └── utils/                                          # Utility functions
 │       ├── __init__.py

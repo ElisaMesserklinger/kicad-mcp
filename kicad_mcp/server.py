@@ -38,6 +38,8 @@ from kicad_mcp.prompts.bom_prompts import register_bom_prompts
 from kicad_mcp.prompts.pattern_prompts import register_pattern_prompts
 from kicad_mcp.prompts.footprint_prompts import register_footprint_prompts
 from kicad_mcp.prompts.routing_prompts import register_routing_prompts
+from kicad_mcp.prompts.analyze_schematic_prompt import register_schematic_prompts
+
 
 
 
@@ -173,6 +175,7 @@ def create_server() -> FastMCP:
     register_pattern_prompts(mcp)
     register_footprint_prompts(mcp)
     register_routing_prompts(mcp)
+    register_schematic_prompts(mcp)
 
     # Register signal handlers and cleanup
     register_signal_handlers(mcp)
